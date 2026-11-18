@@ -1,0 +1,6 @@
+{
+  "name": "Prospero 13.60 SDK Studio & Agent Handoff",
+  "description": "Interactive architecture scaffolder, pitfall auditor, and AI agent handoff specification workbench for PlayStation 5 Firmware 13.60 homebrew development.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

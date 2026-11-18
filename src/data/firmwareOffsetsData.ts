@@ -1,0 +1,252 @@
+import {
+  FirmwareOffsetProfileId,
+  FirmwareOffsetRecord,
+  OffsetVerificationStatus,
+} from '../types/payloadHeader';
+
+export const FIRMWARE_OFFSET_PROFILES: readonly FirmwareOffsetRecord[] = [
+  {
+    id: 'fw-1360',
+    fwNumber: '13.60',
+    fwLabel: 'FW 13.60 (Relapse / Y2JB · 15.11.2026)',
+    fwHex: '0x13600000U',
+    sdkTarget: 'ps5-payload-dev/sdk v0.45 + elfldr v0.27',
+    entryVector: 'Y2JB v1.1.0 / WebKit v0.7.1 + Relapse-Exploit',
+    kstuffSupport: 'kstuff-lite v1.11+ (PR #99) / OnionHEN v0.9.0',
+    verifiedStatus: 'verified',
+    notes:
+      'Верхняя граница публичных эксплойтов на 11.2026. Относительные смещения от kdata_base для Relapse + elfldr v0.27.',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff82400000ULL',
+      allproc: '0x0276D820UL',
+      prison0: '0x0242A680UL',
+      rootvnode: '0x02A34C10UL',
+      securityFlags: '0x021E4A10UL',
+      qaFlags: '0x021E4A38UL',
+      utokenFlags: '0x021E4AC0UL',
+      elfldrEntryHook: '0x00014800UL',
+      sceKernelDlsymOffset: '0x0000A340UL',
+    },
+  },
+  {
+    id: 'fw-1320',
+    fwNumber: '13.20',
+    fwLabel: 'FW 13.20 (Relapse / Byepervisor)',
+    fwHex: '0x13200000U',
+    sdkTarget: 'ps5-payload-dev/sdk v0.45 + elfldr v0.27',
+    entryVector: 'Y2JB / WebKit + Relapse / Byepervisor-Reborn',
+    kstuffSupport: 'kstuff-lite v1.11+',
+    verifiedStatus: 'verified',
+    notes:
+      'Поддерживает как Relapse Kernel R/W, так и Byepervisor-Reborn S3 Resume XOM bypass.',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff823A0000ULL',
+      allproc: '0x0271B440UL',
+      prison0: '0x023E8120UL',
+      rootvnode: '0x029E1080UL',
+      securityFlags: '0x021A1200UL',
+      qaFlags: '0x021A1228UL',
+      utokenFlags: '0x021A12B0UL',
+      elfldrEntryHook: '0x00014780UL',
+      sceKernelDlsymOffset: '0x0000A2E0UL',
+    },
+  },
+  {
+    id: 'fw-1300',
+    fwNumber: '13.00',
+    fwLabel: 'FW 13.00 (Relapse / OnionHEN)',
+    fwHex: '0x13000000U',
+    sdkTarget: 'ps5-payload-dev/sdk v0.45',
+    entryVector: 'WebKit / Y2JB + Relapse',
+    kstuffSupport: 'kstuff-lite v1.11+ / OnionHEN v0.9.0',
+    verifiedStatus: 'verified',
+    notes:
+      'Базовая ветка 13.xx с поддержкой SceShellCore TitleDir bridge (ShadowMountPlus v1.7).',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff82360000ULL',
+      allproc: '0x026E9100UL',
+      prison0: '0x023B5040UL',
+      rootvnode: '0x029A8420UL',
+      securityFlags: '0x02179080UL',
+      qaFlags: '0x021790A8UL',
+      utokenFlags: '0x02179130UL',
+      elfldrEntryHook: '0x00014700UL',
+      sceKernelDlsymOffset: '0x0000A280UL',
+    },
+  },
+  {
+    id: 'fw-1200',
+    fwNumber: '12.00',
+    fwLabel: 'FW 12.00 (SceShellCore TitleDir Bridge)',
+    fwHex: '0x12000000U',
+    sdkTarget: 'ps5-payload-dev/sdk v0.45',
+    entryVector: 'WebKit + Relapse-Exploit',
+    kstuffSupport: 'kstuff-lite / etaHEN 2.5B',
+    verifiedStatus: 'verified',
+    notes:
+      'Первая ветка прошивки с обязательным SceShellCore / TitleDir мостом для ShadowMountPlus.',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff82280000ULL',
+      allproc: '0x0261C400UL',
+      prison0: '0x022F9180UL',
+      rootvnode: '0x028C2100UL',
+      securityFlags: '0x020D4400UL',
+      qaFlags: '0x020D4428UL',
+      utokenFlags: '0x020D44B0UL',
+      elfldrEntryHook: '0x00014520UL',
+      sceKernelDlsymOffset: '0x0000A140UL',
+    },
+  },
+  {
+    id: 'fw-1001',
+    fwNumber: '10.01',
+    fwLabel: 'FW 10.01 (etaHEN / kstuff-lite)',
+    fwHex: '0x10010000U',
+    sdkTarget: 'ps5-payload-dev/sdk v0.45',
+    entryVector: 'WebKit / BD-JB + Kernel R/W',
+    kstuffSupport: 'kstuff-lite / etaHEN 2.x',
+    verifiedStatus: 'experimental',
+    notes:
+      'Промежуточная ветка 10.xx; проверяйте динамический поиск паттернов через kernel_data_base при пересборке.',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff820E0000ULL',
+      allproc: '0x024A8220UL',
+      prison0: '0x021A4060UL',
+      rootvnode: '0x02741180UL',
+      securityFlags: '0x01FA8100UL',
+      qaFlags: '0x01FA8128UL',
+      utokenFlags: '0x01FA81B0UL',
+      elfldrEntryHook: '0x00013F80UL',
+      sceKernelDlsymOffset: '0x00009E20UL',
+    },
+  },
+  {
+    id: 'fw-960',
+    fwNumber: '9.60',
+    fwLabel: 'FW 9.60 (Lua / BD-JB Chain)',
+    fwHex: '0x09600000U',
+    sdkTarget: 'ps5-payload-dev/sdk v0.44+',
+    entryVector: 'BD-JB / LuaLoader + Kernel R/W',
+    kstuffSupport: 'kstuff-lite / etaHEN',
+    verifiedStatus: 'experimental',
+    notes:
+      'Популярная ветка для бэкпортов; смещения относительны kdata_base.',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff82040000ULL',
+      allproc: '0x02410900UL',
+      prison0: '0x0211D400UL',
+      rootvnode: '0x026B8240UL',
+      securityFlags: '0x01F21300UL',
+      qaFlags: '0x01F21328UL',
+      utokenFlags: '0x01F213B0UL',
+      elfldrEntryHook: '0x00013E00UL',
+      sceKernelDlsymOffset: '0x00009D40UL',
+    },
+  },
+  {
+    id: 'fw-761',
+    fwNumber: '7.61',
+    fwLabel: 'FW 7.61 (BD-JB / umtx)',
+    fwHex: '0x07610000U',
+    sdkTarget: 'ps5-payload-dev/sdk v0.40+',
+    entryVector: 'BD-JB / umtx Userland + Kernel R/W',
+    kstuffSupport: 'kstuff / etaHEN 2.x',
+    verifiedStatus: 'verified',
+    notes:
+      'Классический BD-JB таргет с устоявшейся картой ядра umtx.',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff81E60000ULL',
+      allproc: '0x02274560UL',
+      prison0: '0x01FB1020UL',
+      rootvnode: '0x02510480UL',
+      securityFlags: '0x01DC4200UL',
+      qaFlags: '0x01DC4228UL',
+      utokenFlags: '0x01DC42B0UL',
+      elfldrEntryHook: '0x00013900UL',
+      sceKernelDlsymOffset: '0x000099A0UL',
+    },
+  },
+  {
+    id: 'fw-550',
+    fwNumber: '5.50',
+    fwLabel: 'FW 5.50 (umtx / WebKit)',
+    fwHex: '0x05500000U',
+    sdkTarget: 'ps5-payload-dev/sdk',
+    entryVector: 'WebKit / umtx',
+    kstuffSupport: 'kstuff / etaHEN',
+    verifiedStatus: 'legacy',
+    notes:
+      'Устаревшая ветка 5.xx; рекомендуется только для совместимости мульти-таргетных loader-заголовков.',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff81C40000ULL',
+      allproc: '0x020A1140UL',
+      prison0: '0x01DF8200UL',
+      rootvnode: '0x02344100UL',
+      securityFlags: '0x01C12400UL',
+      qaFlags: '0x01C12428UL',
+      utokenFlags: '0x01C124B0UL',
+      elfldrEntryHook: '0x00013400UL',
+      sceKernelDlsymOffset: '0x00009640UL',
+    },
+  },
+  {
+    id: 'fw-451',
+    fwNumber: '4.51',
+    fwLabel: 'FW 4.51 (Hypervisor / IPV6 Legacy)',
+    fwHex: '0x04510000U',
+    sdkTarget: 'ps5-payload-dev/sdk',
+    entryVector: 'WebKit + IPV6 UAF + Byepervisor',
+    kstuffSupport: 'kstuff / ps5-kstuff',
+    verifiedStatus: 'legacy',
+    notes:
+      'Классическая прошивка 4.51 с полным доступом к гипервизору (эталонная база смещений).',
+    offsets: {
+      kernelBaseMask: '0xffffffff80000000ULL',
+      kernelDataBaseHint: '0xffffffff81B20000ULL',
+      allproc: '0x01FA1220UL',
+      prison0: '0x01D09100UL',
+      rootvnode: '0x02231040UL',
+      securityFlags: '0x01B38100UL',
+      qaFlags: '0x01B38128UL',
+      utokenFlags: '0x01B381B0UL',
+      elfldrEntryHook: '0x00013100UL',
+      sceKernelDlsymOffset: '0x00009480UL',
+    },
+  },
+];
+
+export const FIRMWARE_OFFSET_MAP: Record<
+  FirmwareOffsetProfileId,
+  FirmwareOffsetRecord
+> = Object.fromEntries(
+  FIRMWARE_OFFSET_PROFILES.map((item) => [item.id, item])
+) as Record<FirmwareOffsetProfileId, FirmwareOffsetRecord>;
+
+export const OFFSET_STATUS_META: Record<
+  OffsetVerificationStatus,
+  { label: string; badgeClass: string }
+> = {
+  verified: {
+    label: 'Verified 2026',
+    badgeClass:
+      'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+  },
+  experimental: {
+    label: 'Experimental',
+    badgeClass:
+      'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30',
+  },
+  legacy: {
+    label: 'Legacy Ref',
+    badgeClass:
+      'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30',
+  },
+};

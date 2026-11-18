@@ -1,0 +1,52 @@
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Shared object file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x9A700
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          17439752 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         4
+  Size of section headers:           64 (bytes)
+  Number of section headers:         21
+  Section header string table index: 20
+Dynamic section at offset 0x109c000 contains 30 entries:
+  Tag                Type              Name/Value
+  0x0000000000000001 (NEEDED)          Shared library: [libkernel_web.sprx]
+  0x0000000000000001 (NEEDED)          Shared library: [libSceLibcInternal.sprx]
+  0x0000000000000001 (NEEDED)          Shared library: [libSceNet.sprx]
+  0x0000000000000001 (NEEDED)          Shared library: [libSceHttp.sprx]
+  0x0000000000000001 (NEEDED)          Shared library: [libSceSsl.sprx]
+  0x0000000000000001 (NEEDED)          Shared library: [libSceUserService.sprx]
+  0x0000000000000001 (NEEDED)          Shared library: [libSceNotification.sprx]
+  0x0000000000000001 (NEEDED)          Shared library: [libSceAppInstUtil.sprx]
+  0x000000006ffffffb (FLAGS_1)         PIE 
+  0x0000000000000015 (DEBUG)           0x0
+  0x0000000000000007 (RELA)            0xa6ac0
+  0x0000000000000008 (RELASZ)          19704 (bytes)
+  0x0000000000000009 (RELAENT)         24 (bytes)
+  0x000000006ffffff9 (RELACOUNT)       738
+  0x0000000000000017 (JMPREL)          0xab7b8
+  0x0000000000000002 (PLTRELSZ)        1920 (bytes)
+  0x0000000000000003 (PLTGOT)          0xaf730
+  0x0000000000000014 (PLTREL)          RELA
+  0x0000000000000006 (SYMTAB)          0xa5138
+  0x000000000000000b (SYMENT)          24 (bytes)
+  0x0000000000000005 (STRTAB)          0xa61fc
+  0x000000000000000a (STRSZ)           2243 (bytes)
+  0x000000006ffffef5 (GNU_HASH)        0xa6140
+  0x0000000000000020 (PREINIT_ARRAY)   0x0
+  0x0000000000000021 (PREINIT_ARRAYSZ) 0 (bytes)
+  0x0000000000000019 (INIT_ARRAY)      0x1096f68
+  0x000000000000001b (INIT_ARRAYSZ)    0 (bytes)
+  0x000000000000001a (FINI_ARRAY)      0x1096f68
+  0x000000000000001c (FINI_ARRAYSZ)    0 (bytes)
+  0x0000000000000000 (NULL)            0x0

@@ -1,0 +1,1585 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 677d56b..c0b5c47 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -10,7 +10,7 @@ checksum = "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4"
+ 
+ [[package]]
+ name = "titan-core"
+-version = "1.0.0"
++version = "1.0.2"
+ dependencies = [
+  "titan-core-pkg",
+  "libc",
+diff --git a/Cargo.toml b/Cargo.toml
+index cfd9b7d..738db2b 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,6 +1,6 @@
+ [package]
+ name = "titan-core"
+-version = "1.0.0"
++version = "1.0.2"
+ edition = "2021"
+ license = "GPL-3.0-or-later"
+ 
+diff --git a/crates/titan-core-pkg/src/lib.rs b/crates/titan-core-pkg/src/lib.rs
+index 5eb598d..fc813c7 100644
+--- a/crates/titan-core-pkg/src/lib.rs
++++ b/crates/titan-core-pkg/src/lib.rs
+@@ -18,6 +18,7 @@ pub mod decoder;
+ mod layout;
+ mod outer;
+ mod pkg;
++mod protected;
+ mod tree;
+ 
+ use alloc::string::String;
+@@ -70,9 +71,12 @@ pub struct Pkg {
+     blocks: Vec<Block>,
+     /// Why `blocks()` refuses a file; `Node::blk_err` indexes into it.
+     blk_errs: Vec<String>,
++    /// Decrypted protected container entries; `Node::held` indexes into it.
++    held: Vec<Vec<u8>>,
+ }
+ 
+ const NO_ERR: u32 = u32::MAX;
++const HELD: &str = "a protected container entry, stored encrypted in the .pkg and decrypted into memory: no plaintext extents or blocks (read it with read_at)";
+ 
+ struct Node {
+     path_off: u32,
+@@ -88,24 +92,53 @@ struct Node {
+     blk_start: u32,
+     blk_end: u32,
+     blk_err: u32,
++    /// Index into `Pkg::held` for a decrypted protected entry, else `NO_ERR`.
++    held: u32,
+ }
+ 
+ /// Container entries that stand in for a `sce_sys` file the inner image lacks (`FP/lib.rs:94-104`).
+-const CNT_FALLBACKS: [(u32, &str); 3] = [
++const CNT_FALLBACKS: [(u32, &str); 16] = [
+     (0x1200, "sce_sys/icon0.png"),
+     (0x1280, "sce_sys/icon0.dds"),
+     (0x2000, "sce_sys/param.json"),
++    (0x1006, "sce_sys/pic1.png"),
++    (0x100D, "sce_sys/save_data.png"),
++    (0x1220, "sce_sys/pic0.png"),
++    (0x1240, "sce_sys/snd0.at9"),
++    (0x12A0, "sce_sys/pic0.dds"),
++    (0x12C0, "sce_sys/pic1.dds"),
++    (0x1480, "sce_sys/trophy2/trophy00.ucp"),
++    (0x14A0, "sce_sys/uds/uds00.ucp"),
++    (0x2040, "sce_sys/pic2.png"),
++    (0x2060, "sce_sys/pic2.dds"),
++    (0x0402, "sce_sys/nptitle.dat"),
++    (0x2020, "sce_sys/uds/npbind.dat"),
++    (0x2021, "sce_sys/trophy2/npbind.dat"),
+ ];
+ 
+-fn table(image: pkg::Image, mut walked: Vec<tree::Walked>) -> Result<Pkg, Error> {
++fn table<R: PRead>(io: &R, len: u64, image: pkg::Image, mut walked: Vec<tree::Walked>) -> Result<Pkg, Error> {
+     let has = |w: &[tree::Walked], p: &str| w.iter().any(|x| x.path == p);
++    let mut held = Vec::new();
++    let mut held_paths: Vec<(&str, u32)> = Vec::new();
+     for (id, path) in CNT_FALLBACKS {
+         let Some(e) = image.cnt.entry(id) else { continue };
+-        if e.flags1 & 0x8000_0000 != 0 || e.size == 0 || has(&walked, path) {
++        if e.size == 0 || has(&walked, path) {
+             continue;
+         }
+-        if !has(&walked, "sce_sys") {
+-            walked.push(tree::Walked { path: "sce_sys".into(), is_dir: true, size: 0, logical: 0, cnt_at: None });
++        let is_protected = e.flags1 & protected::FLAG != 0;
++        if is_protected {
++            match protected::plaintext(io, len, &image.cnt, &e) {
++                Ok(data) => {
++                    held_paths.push((path, held.len() as u32));
++                    held.push(data);
++                }
++                Err(_) => continue,
++            }
++        }
++        for (i, _) in path.match_indices('/') {
++            if !has(&walked, &path[..i]) {
++                walked.push(tree::Walked { path: path[..i].into(), is_dir: true, size: 0, logical: 0, cnt_at: None });
++            }
+         }
+         walked.push(tree::Walked { path: path.into(), is_dir: false, size: e.size, logical: 0, cnt_at: Some(e.at) });
+     }
+@@ -126,7 +159,12 @@ fn table(image: pkg::Image, mut walked: Vec<tree::Walked>) -> Result<Pkg, Error>
+         let blk_start = blocks.len() as u32;
+         let mut ext_ok = true;
+         let mut blk_err = NO_ERR;
+-        if !w.is_dir {
++        let held_ix = held_paths.iter().find(|(p, _)| *p == w.path).map_or(NO_ERR, |&(_, i)| i);
++        if held_ix != NO_ERR {
++            ext_ok = false;
++            blk_err = blk_errs.len() as u32;
++            blk_errs.push(alloc::format!("{}: {HELD}", w.path));
++        } else if !w.is_dir {
+             tmp.clear();
+             match w.cnt_at {
+                 Some(at) if w.size > 0 => tmp.push(Extent { pkg_off: at, len: w.size }),
+@@ -173,6 +211,7 @@ fn table(image: pkg::Image, mut walked: Vec<tree::Walked>) -> Result<Pkg, Error>
+             blk_start,
+             blk_end: blocks.len() as u32,
+             blk_err,
++            held: held_ix,
+         });
+         arena.push_str(&w.path);
+     }
+@@ -180,7 +219,7 @@ fn table(image: pkg::Image, mut walked: Vec<tree::Walked>) -> Result<Pkg, Error>
+     extents.shrink_to_fit();
+     ext_pos.shrink_to_fit();
+     blocks.shrink_to_fit();
+-    Ok(Pkg { image, arena, nodes, extents, ext_pos, blocks, blk_errs })
++    Ok(Pkg { image, arena, nodes, extents, ext_pos, blocks, blk_errs, held })
+ }
+ 
+ /// A CNT file as raw pseudo-blocks of at most 256 KiB, back to back from `at`.
+@@ -258,7 +297,7 @@ impl Pkg {
+     pub fn open<R: PRead>(io: &R, len: u64) -> Result<Pkg, Error> {
+         let image = pkg::Image::open(io, len)?;
+         let walked = tree::walk(io, &image)?;
+-        table(image, walked)
++        table(io, len, image, walked)
+     }
+ 
+     fn entry(&self, i: usize) -> Entry<'_> {
+@@ -295,6 +334,7 @@ impl Pkg {
+         match self.file(e) {
+             None => Ok(&[]),
+             Some(n) if n.ext_ok => Ok(&self.extents[n.ext_start as usize..n.ext_end as usize]),
++            Some(n) if n.held != NO_ERR => Err(pkg::unsupported(alloc::format!("{}: {HELD}", e.path))),
+             Some(_) => Err(pkg::unsupported(alloc::format!("{}: has compressed blocks, no plaintext extents", e.path))),
+         }
+     }
+@@ -318,6 +358,10 @@ impl Pkg {
+             return Ok(0);
+         }
+         let want = (n.size - off).min(buf.len() as u64) as usize;
++        if let Some(data) = self.held.get(n.held as usize) {
++            buf[..want].copy_from_slice(&data[off as usize..off as usize + want]);
++            return Ok(want);
++        }
+         if !n.ext_ok {
+             let mut dec = pkg::Decoder::new();
+             self.image.read_mount(io, n.logical + off, &mut buf[..want], &mut dec)?;
+diff --git a/crates/titan-core-pkg/src/pkg.rs b/crates/titan-core-pkg/src/pkg.rs
+index 39e16a9..50c280d 100644
+--- a/crates/titan-core-pkg/src/pkg.rs
++++ b/crates/titan-core-pkg/src/pkg.rs
+@@ -151,9 +151,13 @@ pub(crate) struct CntEntry {
+     pub id: u32,
+     /// `flags1 & 0x8000_0000`: an encrypted entry, not a plain copy of anything.
+     pub flags1: u32,
++    /// For a protected entry the key index is `flags2 >> 12`.
++    pub flags2: u32,
+     /// Absolute offset in the package.
+     pub at: u64,
+     pub size: u64,
++    /// The entry's 32-byte table row as stored: a protected entry's key depends on it.
++    pub row: [u8; 32],
+ }
+ 
+ #[allow(dead_code)]
+@@ -191,7 +195,9 @@ pub(crate) fn container<R: PRead>(io: &R, len: u64, cnt_offset: u64) -> Result<C
+         if at.checked_add(size).map_or(true, |e| e > len) {
+             return Err(corrupt(format!("container entry {id:#06x} runs past the end (truncated?)")));
+         }
+-        entries.push(CntEntry { id, flags1: be32(row, 8), at, size });
++        let mut raw = [0u8; 32];
++        raw.copy_from_slice(row);
++        entries.push(CntEntry { id, flags1: be32(row, 8), flags2: be32(row, 12), at, size, row: raw });
+     }
+     let id = &head[0x40..0x64];
+     let id_len = id.iter().position(|&b| b == 0).unwrap_or(id.len());
+diff --git a/crates/titan-core-pkg/src/protected.rs b/crates/titan-core-pkg/src/protected.rs
+new file mode 100644
+index 0000000..e37d413
+--- /dev/null
++++ b/crates/titan-core-pkg/src/protected.rs
+@@ -0,0 +1,343 @@
++//! Protected container entries (`flags1` bit 31): `nptitle.dat` and the two `npbind.dat` files
++//! a package keeps only encrypted in its container.
++//!
++//! key/iv = SHA3-256(row || entry key): the first 16 bytes the IV, the last 16 the AES-128 key,
++//! CBC. `row` is the entry's 32-byte table row as stored; the entry key is the passcode-derived
++//! key that `flags2 >> 12` names, tested first against the container's entry-keys slot.
++//!
++//! Ported from ps5-dump-forge (`crates/ps5-dump-forge-fpkg/src/protected.rs` and the vendored
++//! `ps5upload-fpkg` `crypto.rs`), GPL-3.0-or-later. SHA3-256 and AES-128 are written out here
++//! because the crate takes no dependencies.
++
++use alloc::format;
++use alloc::string::String;
++use alloc::vec;
++use alloc::vec::Vec;
++
++use crate::pkg::{pread_exact, CntEntry, Container};
++use crate::PRead;
++
++pub(crate) const FLAG: u32 = 0x8000_0000;
++const ENTRY_KEYS: u32 = 0x0010;
++const MAX_SIZE: u64 = 1 << 20;
++const KEY_COUNT: u32 = 7;
++const DEBUG_PASSCODE: &str = "00000000000000000000000000000000";
++
++pub(crate) fn plaintext<R: PRead>(io: &R, len: u64, cnt: &Container, e: &CntEntry) -> Result<Vec<u8>, String> {
++    if e.size > MAX_SIZE {
++        return Err(format!("{} bytes, over the {MAX_SIZE} it decrypts", e.size));
++    }
++    let k = (e.flags2 >> 12) & 0xF;
++    if k >= KEY_COUNT {
++        return Err(format!("it names key index {k}, which the container has no key for"));
++    }
++    let key = derive_pfs_key(&cnt.content_id, DEBUG_PASSCODE, k);
++    match key_check(io, cnt, &key, k)? {
++        None => return Err("the container has no key check for its key index".into()),
++        Some(false) => return Err("the debug passcode fails the container's key check".into()),
++        Some(true) => {}
++    }
++    let padded = (e.size + 15) & !15;
++    if e.at.checked_add(padded).map_or(true, |end| end > len) {
++        return Err("its padded data runs past the end of the package".into());
++    }
++    let mut data = vec![0u8; padded as usize];
++    pread_exact(io, e.at, &mut data).map_err(|x| format!("{x}"))?;
++    decrypt_entry(&e.row, &key, &mut data);
++    data.truncate(e.size as usize);
++    Ok(data)
++}
++
++fn key_check<R: PRead>(io: &R, cnt: &Container, key: &[u8; 32], k: u32) -> Result<Option<bool>, String> {
++    let digest_at = 32 + 32 * u64::from(k);
++    let Some(keys) = cnt.entry(ENTRY_KEYS).filter(|ek| ek.size >= digest_at + 32) else {
++        return Ok(None);
++    };
++    let mut stored = [0u8; 32];
++    pread_exact(io, keys.at + digest_at, &mut stored).map_err(|x| format!("{x}"))?;
++    let mut want = sha3(key);
++    for (w, b) in want.iter_mut().zip(key) {
++        *w ^= b;
++    }
++    Ok(Some(stored == want))
++}
++
++pub(crate) fn decrypt_entry(row: &[u8; 32], entry_key: &[u8; 32], data: &mut [u8]) {
++    let mut pre = [0u8; 64];
++    pre[..32].copy_from_slice(row);
++    pre[32..].copy_from_slice(entry_key);
++    let iv_key = sha3(&pre);
++    let mut key = [0u8; 16];
++    let mut iv = [0u8; 16];
++    key.copy_from_slice(&iv_key[16..]);
++    iv.copy_from_slice(&iv_key[..16]);
++    aes128_cbc_decrypt(&key, iv, data);
++}
++
++pub(crate) fn derive_pfs_key(content_id: &str, passcode: &str, index: u32) -> [u8; 32] {
++    let mut cid = [0u8; 48];
++    let id = content_id.as_bytes();
++    let n = id.len().min(48);
++    cid[..n].copy_from_slice(&id[..n]);
++    let mut buf = Vec::with_capacity(64 + passcode.len());
++    buf.extend_from_slice(&sha3(&index.to_be_bytes()));
++    buf.extend_from_slice(&sha3(&cid));
++    buf.extend_from_slice(passcode.as_bytes());
++    sha3(&buf)
++}
++
++const RC: [u64; 24] = [
++    0x0000000000000001, 0x0000000000008082, 0x800000000000808a, 0x8000000080008000,
++    0x000000000000808b, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009,
++    0x000000000000008a, 0x0000000000000088, 0x0000000080008009, 0x000000008000000a,
++    0x000000008000808b, 0x800000000000008b, 0x8000000000008089, 0x8000000000008003,
++    0x8000000000008002, 0x8000000000000080, 0x000000000000800a, 0x800000008000000a,
++    0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008,
++];
++const ROT: [u32; 25] = [0, 1, 62, 28, 27, 36, 44, 6, 55, 20, 3, 10, 43, 25, 39, 41, 45, 15, 21, 8, 18, 2, 61, 56, 14];
++
++fn keccak_f(a: &mut [u64; 25]) {
++    for rc in RC {
++        let mut c = [0u64; 5];
++        for x in 0..5 {
++            c[x] = a[x] ^ a[x + 5] ^ a[x + 10] ^ a[x + 15] ^ a[x + 20];
++        }
++        for x in 0..5 {
++            let d = c[(x + 4) % 5] ^ c[(x + 1) % 5].rotate_left(1);
++            for y in 0..5 {
++                a[x + 5 * y] ^= d;
++            }
++        }
++        let mut b = [0u64; 25];
++        for x in 0..5 {
++            for y in 0..5 {
++                b[y + 5 * ((2 * x + 3 * y) % 5)] = a[x + 5 * y].rotate_left(ROT[x + 5 * y]);
++            }
++        }
++        for y in 0..5 {
++            for x in 0..5 {
++                a[x + 5 * y] = b[x + 5 * y] ^ (!b[(x + 1) % 5 + 5 * y] & b[(x + 2) % 5 + 5 * y]);
++            }
++        }
++        a[0] ^= rc;
++    }
++}
++
++pub(crate) fn sha3(data: &[u8]) -> [u8; 32] {
++    const RATE: usize = 136;
++    let mut a = [0u64; 25];
++    let absorb = |a: &mut [u64; 25], block: &[u8; RATE]| {
++        for (i, w) in block.chunks_exact(8).enumerate() {
++            a[i] ^= u64::from_le_bytes([w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[7]]);
++        }
++        keccak_f(a);
++    };
++    let mut chunks = data.chunks_exact(RATE);
++    for c in &mut chunks {
++        let mut block = [0u8; RATE];
++        block.copy_from_slice(c);
++        absorb(&mut a, &block);
++    }
++    let rest = chunks.remainder();
++    let mut last = [0u8; RATE];
++    last[..rest.len()].copy_from_slice(rest);
++    last[rest.len()] ^= 0x06;
++    last[RATE - 1] ^= 0x80;
++    absorb(&mut a, &last);
++    let mut out = [0u8; 32];
++    for (i, o) in out.chunks_exact_mut(8).enumerate() {
++        o.copy_from_slice(&a[i].to_le_bytes());
++    }
++    out
++}
++
++const fn gmul(mut a: u8, mut b: u8) -> u8 {
++    let mut p = 0u8;
++    while b != 0 {
++        if b & 1 != 0 {
++            p ^= a;
++        }
++        let hi = a & 0x80;
++        a <<= 1;
++        if hi != 0 {
++            a ^= 0x1b;
++        }
++        b >>= 1;
++    }
++    p
++}
++
++const SBOXES: ([u8; 256], [u8; 256]) = {
++    let mut s = [0u8; 256];
++    let mut inv = [0u8; 256];
++    let mut x = 0usize;
++    while x < 256 {
++        let mut r = 1u8;
++        let mut i = 0;
++        while i < 254 {
++            r = gmul(r, x as u8);
++            i += 1;
++        }
++        let b = if x == 0 { 0 } else { r };
++        let v = b ^ b.rotate_left(1) ^ b.rotate_left(2) ^ b.rotate_left(3) ^ b.rotate_left(4) ^ 0x63;
++        s[x] = v;
++        inv[v as usize] = x as u8;
++        x += 1;
++    }
++    (s, inv)
++};
++
++fn expand_key(key: &[u8; 16]) -> [[u8; 16]; 11] {
++    let sbox = &SBOXES.0;
++    let mut w = [[0u8; 4]; 44];
++    for i in 0..4 {
++        w[i].copy_from_slice(&key[4 * i..4 * i + 4]);
++    }
++    let mut rcon = 1u8;
++    for i in 4..44 {
++        let mut t = w[i - 1];
++        if i % 4 == 0 {
++            t = [sbox[t[1] as usize] ^ rcon, sbox[t[2] as usize], sbox[t[3] as usize], sbox[t[0] as usize]];
++            rcon = gmul(rcon, 2);
++        }
++        for j in 0..4 {
++            w[i][j] = w[i - 4][j] ^ t[j];
++        }
++    }
++    let mut rk = [[0u8; 16]; 11];
++    for (r, k) in rk.iter_mut().enumerate() {
++        for c in 0..4 {
++            k[4 * c..4 * c + 4].copy_from_slice(&w[4 * r + c]);
++        }
++    }
++    rk
++}
++
++fn decrypt_block(rk: &[[u8; 16]; 11], s: &mut [u8; 16]) {
++    let inv = &SBOXES.1;
++    let add = |s: &mut [u8; 16], k: &[u8; 16]| s.iter_mut().zip(k).for_each(|(b, k)| *b ^= k);
++    let inv_shift_sub = |s: &mut [u8; 16]| {
++        let t = *s;
++        for r in 0..4 {
++            for c in 0..4 {
++                s[r + 4 * ((c + r) % 4)] = inv[t[r + 4 * c] as usize];
++            }
++        }
++    };
++    add(s, &rk[10]);
++    for round in (1..10).rev() {
++        inv_shift_sub(s);
++        add(s, &rk[round]);
++        for c in 0..4 {
++            let [a0, a1, a2, a3] = [s[4 * c], s[4 * c + 1], s[4 * c + 2], s[4 * c + 3]];
++            s[4 * c] = gmul(a0, 14) ^ gmul(a1, 11) ^ gmul(a2, 13) ^ gmul(a3, 9);
++            s[4 * c + 1] = gmul(a0, 9) ^ gmul(a1, 14) ^ gmul(a2, 11) ^ gmul(a3, 13);
++            s[4 * c + 2] = gmul(a0, 13) ^ gmul(a1, 9) ^ gmul(a2, 14) ^ gmul(a3, 11);
++            s[4 * c + 3] = gmul(a0, 11) ^ gmul(a1, 13) ^ gmul(a2, 9) ^ gmul(a3, 14);
++        }
++    }
++    inv_shift_sub(s);
++    add(s, &rk[0]);
++}
++
++fn aes128_cbc_decrypt(key: &[u8; 16], iv: [u8; 16], data: &mut [u8]) {
++    let rk = expand_key(key);
++    let mut prev = iv;
++    for chunk in data.chunks_exact_mut(16) {
++        let mut blk = [0u8; 16];
++        blk.copy_from_slice(chunk);
++        let ct = blk;
++        decrypt_block(&rk, &mut blk);
++        for (b, p) in blk.iter_mut().zip(prev) {
++            *b ^= p;
++        }
++        chunk.copy_from_slice(&blk);
++        prev = ct;
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn unhex(s: &str) -> Vec<u8> {
++        (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
++    }
++
++    #[test]
++    fn sha3_256_known_answers() {
++        assert_eq!(sha3(b"").to_vec(), unhex("a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a"));
++        assert_eq!(sha3(b"abc").to_vec(), unhex("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532"));
++        assert_eq!(sha3(&[0xa3; 200]).to_vec(), unhex("79f38adec5c20307a98ef76e8324afbfd46cfd81b22e3973c65fa1bd9de31787"));
++    }
++
++    #[test]
++    fn aes128_fips197_c1() {
++        let key: [u8; 16] = unhex("000102030405060708090a0b0c0d0e0f").try_into().unwrap();
++        let mut blk: [u8; 16] = unhex("69c4e0d86a7b0430d8cdb78070b4c55a").try_into().unwrap();
++        decrypt_block(&expand_key(&key), &mut blk);
++        assert_eq!(blk.to_vec(), unhex("00112233445566778899aabbccddeeff"));
++    }
++
++    const CONTENT_ID: &str = "UP0000-PPSA01234_00-TESTGAME00000000";
++    const KEY3: &str = "be99fab1eb4d7b1ab6e7e30c5d18fedd8b5a157303e0330717341aa845dd9a08";
++    const CHECK3: &str = "6fefce37aa9d4766c9cfe4ced2a8cda7daf9dc6b97bd259e29745b60c138c155";
++    const ROW: &str = "0000040200000000800000000000300000001200000000320000000000000000";
++    const CT: &str = "6e42784dfb16d264c5f5a2365ce03d6015ef1d6b0e33f0dd4be993409ee62b7b\
++                      bffcef03843b50ba80d38afa5745ddb02a5b9cbd39ec79ebdbde47b8154163c6";
++
++    fn plain() -> Vec<u8> {
++        (0..50).map(|i| (i * 7 + 1) as u8).collect()
++    }
++
++    #[test]
++    fn decrypts_dump_forge_encrypt_entry() {
++        let key = derive_pfs_key(CONTENT_ID, DEBUG_PASSCODE, 3);
++        assert_eq!(key.to_vec(), unhex(KEY3));
++        let mut check = sha3(&key);
++        check.iter_mut().zip(key).for_each(|(c, k)| *c ^= k);
++        assert_eq!(check.to_vec(), unhex(CHECK3));
++        let row: [u8; 32] = unhex(ROW).try_into().unwrap();
++        let mut data = unhex(CT);
++        decrypt_entry(&row, &key, &mut data);
++        data.truncate(50);
++        assert_eq!(data, plain());
++    }
++
++    struct Mem(Vec<u8>);
++    impl PRead for Mem {
++        fn pread(&self, off: u64, buf: &mut [u8]) -> Result<usize, crate::Error> {
++            let at = (off as usize).min(self.0.len());
++            let n = buf.len().min(self.0.len() - at);
++            buf[..n].copy_from_slice(&self.0[at..at + n]);
++            Ok(n)
++        }
++    }
++
++    fn package(check: &str) -> (Mem, Container, CntEntry) {
++        let mut b = vec![0u8; 0x240];
++        b[0x100 + 32 + 32 * 3..0x100 + 32 + 32 * 4].copy_from_slice(&unhex(check));
++        b[0x200..0x240].copy_from_slice(&unhex(CT));
++        let row: [u8; 32] = unhex(ROW).try_into().unwrap();
++        let keys = CntEntry { id: ENTRY_KEYS, flags1: 0, flags2: 0, at: 0x100, size: 32 + 7 * 32, row: [0; 32] };
++        let e = CntEntry { id: 0x0402, flags1: FLAG, flags2: 3 << 12, at: 0x200, size: 50, row };
++        let cnt = Container { content_id: CONTENT_ID.into(), entries: vec![keys, e] };
++        (Mem(b), cnt, e)
++    }
++
++    #[test]
++    fn plaintext_checks_the_key_then_decrypts() {
++        let (io, cnt, e) = package(CHECK3);
++        assert_eq!(plaintext(&io, io.0.len() as u64, &cnt, &e).unwrap(), plain());
++    }
++
++    #[test]
++    fn a_failed_key_check_yields_nothing() {
++        let (io, cnt, e) = package(KEY3);
++        let why = plaintext(&io, io.0.len() as u64, &cnt, &e).unwrap_err();
++        assert!(why.contains("key check"), "{why}");
++        let (io, cnt, e) = package(CHECK3);
++        let big = CntEntry { size: MAX_SIZE + 1, ..e };
++        assert!(plaintext(&io, io.0.len() as u64, &cnt, &big).is_err());
++    }
++}
+diff --git a/ps5/build.sh b/ps5/build.sh
+index 3969a57..bbcb93f 100644
+--- a/ps5/build.sh
++++ b/ps5/build.sh
+@@ -33,7 +33,7 @@ export RUSTC_BOOTSTRAP=1
+ # too under -Z build-std.
+ export CARGO_TARGET_X86_64_PS5_FREEBSD_RUSTFLAGS='--cfg libc_unstable_freebsd_version="11"'
+ export CARGO_TARGET_DIR="$out"
+-export CARGO_TARGET_X86_64_PS5_FREEBSD_LINKER=/work/ps5/linker.sh
++export CARGO_TARGET_X86_64_PS5_FREEBSD_LINKER="$PWD/ps5/linker.sh"
+ export CC_x86_64_ps5_freebsd="$cc" AR_x86_64_ps5_freebsd="$PS5_PAYLOAD_SDK/bin/prospero-ar"
+ # Cargo doesn't see the C objects or linker.sh: drop the linked output so a shim change relinks.
+ build() {
+@@ -46,7 +46,7 @@ build() {
+ # push, embeds it and saves it there (as Dump Forge's self copy).
+ build "${features[@]}"
+ cp "$out/x86_64-ps5-freebsd/release/titan-core" "$out/titan-core-stage1.elf"
+-TITAN_SELF_ELF="/work/$out/titan-core-stage1.elf" build "${features[@]}" --features self-copy
++TITAN_SELF_ELF="$PWD/$out/titan-core-stage1.elf" build "${features[@]}" --features self-copy
+ cp "$out/x86_64-ps5-freebsd/release/titan-core" "$out/titan-core.elf"
+ llvm-readelf -h -d "$out/titan-core.elf" > "$out/titan-core.elf.txt"
+ ls -l "$out/titan-core.elf"
+diff --git a/ps5/linker.sh b/ps5/linker.sh
+old mode 100644
+new mode 100755
+index 1d22c1b..1c442f6
+--- a/ps5/linker.sh
++++ b/ps5/linker.sh
+@@ -11,8 +11,9 @@ for arg in "$@"; do
+     *) args+=("$arg") ;;
+   esac
+ done
+-obj=/work/target/ps5/shim
+-mapfile -t wraps < /work/ps5/shim/syscalls.link
++ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
++obj="$ROOT_DIR/target/ps5/shim"
++mapfile -t wraps < "$ROOT_DIR/ps5/shim/syscalls.link"
+ # rustc passes -nodefaultlibs, so the SDK's native imports are named here.
+ exec "$PS5_PAYLOAD_SDK/bin/prospero-clang" "${args[@]}" \
+   "$obj/freebsd11.o" "$obj/syscalls.o" "$obj/entry.o" "$obj/compat.o" "${wraps[@]}" \
+diff --git a/src/cache.rs b/src/cache.rs
+index 56ad355..455347e 100644
+--- a/src/cache.rs
++++ b/src/cache.rs
+@@ -308,9 +308,103 @@ fn lib_dir(src: &Source) -> Option<PathBuf> {
+     })
+ }
+ 
++fn add_bits(mode: u32, want: u32) -> Option<u32> {
++    let mode = mode & 0o7777;
++    (mode & want != want).then_some(mode | want)
++}
++
++#[derive(Default)]
++struct Access {
++    fixed: u64,
++    failed: u64,
++    first: Option<(PathBuf, Error)>,
++}
++
++impl Access {
++    fn entry(&mut self, path: &Path, m: &fs::Metadata, dirs: u32, files: u32) {
++        use std::os::unix::fs::{MetadataExt, PermissionsExt};
++        let want = if m.is_dir() { dirs } else if m.is_file() { files } else { return };
++        let Some(mode) = add_bits(m.mode(), want) else { return };
++        match fs::set_permissions(path, fs::Permissions::from_mode(mode)) {
++            Ok(()) => self.fixed += 1,
++            Err(e) => {
++                self.failed += 1;
++                self.first.get_or_insert((path.to_path_buf(), e));
++            }
++        }
++    }
++
++    fn tree(&mut self, path: &Path, dirs: u32, files: u32) {
++        let Ok(m) = fs::symlink_metadata(path) else { return };
++        self.entry(path, &m, dirs, files);
++        if m.is_dir() {
++            for (p, m) in walk(path) {
++                self.entry(&p, &m, dirs, files);
++            }
++        }
++    }
++}
++
++/// Opens up `src`'s files for the game and the system services (save data, trophies), which read
++/// them with another uid than the payload (kraken-mount v0.2.1 fix_access).
++pub fn fix_access(src: &Source) {
++    let mut a = Access::default();
++    a.tree(&dir(&src.title_id), 0o777, 0o444);
++    match src.kind {
++        Kind::Pkg => {
++            if let Ok(m) = fs::symlink_metadata(&src.path) {
++                a.entry(&src.path, &m, 0, 0o444);
++            }
++            if let Some(parent) = src.path.parent() {
++                if let Ok(m) = fs::symlink_metadata(parent) {
++                    a.entry(parent, &m, 0o555, 0);
++                }
++            }
++        }
++        Kind::Folder(_) => a.tree(&src.path, 0o555, 0o444),
++    }
++    if a.fixed + a.failed == 0 {
++        return;
++    }
++    if let Some((p, e)) = &a.first {
++        crate::debug_bundle::record_error(
++            &src.title_id,
++            e.raw_os_error().unwrap_or(0),
++            format!("fix_access {}: {e}", p.display()),
++        );
++    }
++    let first = a.first.map_or(String::new(), |(p, e)| format!("; first failure {}: {e}", p.display()));
++    log!("{}: access ({}): {} modes fixed, {} failed{first}", src.title_id, src.path.display(), a.fixed, a.failed);
++}
++
++/// Port of quer3q/ps5-dump-forge PR #62 (17.11.2026): inspect existing AMPR index header
++/// and retain the exact reader failure reason + file size in bytes instead of `.ok()`.
++pub fn validate_existing_index(index_path: &Path, title_id: &str) -> std::result::Result<u64, String> {
++    let meta = fs::metadata(index_path).map_err(|e| format!("stat {}: {e}", index_path.display()))?;
++    let bytes = meta.len();
++    if bytes < 128 {
++        let msg = format!("ampr_emu.index ({bytes} bytes): truncated header (< 128 B)");
++        crate::debug_bundle::record_error(title_id, libc::EINVAL, msg.clone());
++        return Err(msg);
++    }
++    let mut head = [0u8; 16];
++    let mut f = fs::File::open(index_path).map_err(|e| format!("open: {e}"))?;
++    std::io::Read::read_exact(&mut f, &mut head)
++        .map_err(|e| format!("ampr_emu.index ({bytes} bytes): read header: {e}"))?;
++    if !head.starts_with(b"AMPRIDX") && !head.starts_with(b"AMPRPAK") {
++        let msg = format!("ampr_emu.index ({bytes} bytes): invalid magic {:?}", &head[..8]);
++        crate::debug_bundle::record_error(title_id, libc::EINVAL, msg.clone());
++        return Err(msg);
++    }
++    Ok(bytes)
++}
++
++/// Cache layout v2: includes outer container sce_sys files (16 CNT fallbacks) and rebuilt access permissions.
++const STAMP_V: u64 = 2;
++
+ pub fn stamp(src: &Source, s: &Settings) -> serde_json::Value {
+     serde_json::json!({
+-        "v": 1,
++        "v": STAMP_V,
+         "kind": if src.kind == Kind::Pkg { "pkg" } else { "folder" },
+         "source": src.path.to_string_lossy(),
+         "size": src.size,
+@@ -383,14 +477,25 @@ pub fn check(src: &Source, s: &Settings) -> Fresh {
+     let old: serde_json::Value =
+         fs::read(&done).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+     let new = stamp(src, s);
++    if old.get("v") != new.get("v") {
++        return Fresh::Stale(format!("cache layout v{} -> v{STAMP_V}", old.get("v").unwrap_or(&serde_json::Value::Null)));
++    }
+     for (k, v) in new.as_object().into_iter().flatten() {
+         if old.get(k) != Some(v) {
+             return Fresh::Stale(format!("{k} changed"));
+         }
+     }
+     // A cache built before the runtime package descriptor existed (or with it deleted): ng could not find the pkg.
+-    if src.kind == Kind::Pkg && !dir(&src.title_id).join(IMAGE_FILE).is_file() {
+-        return Fresh::Stale(format!("{IMAGE_FILE} missing"));
++    if src.kind == Kind::Pkg {
++        if !dir(&src.title_id).join(IMAGE_FILE).is_file() {
++            return Fresh::Stale(format!("{IMAGE_FILE} missing"));
++        }
++        let idx = dir(&src.title_id).join("ampr_emu.index");
++        if idx.exists() {
++            if let Err(why) = validate_existing_index(&idx, &src.title_id) {
++                return Fresh::Stale(why);
++            }
++        }
+     }
+     // ponytail: an input with a future mtime (wrong clock on the PC that wrote the USB) rebuilds every scan.
+     for p in inputs(src, s) {
+@@ -549,6 +654,7 @@ fn build_inner(src: &Source, s: &Settings, before: &HashSet<PathBuf>) -> Result<
+     let pkg = if is_pkg { Some(open(&src.path)?) } else { None };
+     if let Some((io, p)) = &pkg {
+         let mut buf = vec![0u8; CHUNK];
++        let mut unpackable = (0u64, 0u64);
+         for e in p.files().filter(|e| !e.is_dir) {
+             let lower = e.path.to_ascii_lowercase();
+             // dump-forge always puts a fresh ampr_emu.index (loose files only) into a pkg: ours replaces it.
+@@ -576,13 +682,23 @@ fn build_inner(src: &Source, s: &Settings, before: &HashSet<PathBuf>) -> Result<
+                         // the bundled AMPR grid. Decode those files once into the derived cache.
+                         let free=crate::storage::drives().into_iter().find(|d|d.mount=="/data").map(|d|d.free).unwrap_or(0);
+                         if e.size>free.saturating_sub(256<<20){return Err(Error::new(ErrorKind::StorageFull,format!("Insufficient cache space for {} ({} bytes)",e.path,e.size)));}
+-                        log!("{}: caching {} loose for block-layout compatibility ({} bytes)",src.title_id,e.path,e.size);
++                        unpackable.0 += 1;
++                        unpackable.1 += e.size;
+                         extract(p,io,&e,&dir.join(e.path),&mut buf)?;None
+                     }
+                 }
+             };
+             files.insert(lower, IndexFile { path: e.path.to_string(), size: e.size, chunks });
+         }
++        if unpackable.0 > 0 {
++            log!(
++                "{}: {} files in non-streamable/shared blocks cached loose ({} bytes) from {}",
++                src.title_id,
++                unpackable.0,
++                unpackable.1,
++                src.path.display()
++            );
++        }
+     }
+     compose_fakelib(src, s, pkg.as_ref().map(|(io, p)| (io, p)))?;
+     if !is_pkg {
+diff --git a/src/config.rs b/src/config.rs
+index 0fd5ee7..19677ba 100644
+--- a/src/config.rs
++++ b/src/config.rs
+@@ -87,7 +87,7 @@ fn set(s: &mut Settings, key: &str, v: &str) -> Result<(), String> {
+             s.game_fakelib = match v {
+                 "emulators" => FakelibMode::Emulators,
+                 "full" => FakelibMode::Full,
+-                "off" => FakelibMode::Off,
++                "off" | "disabled" | "none" => FakelibMode::Off,
+                 _ => return Err(format!("expected emulators|full|off, got {v:?}")),
+             }
+         }
+diff --git a/src/debug_bundle.rs b/src/debug_bundle.rs
+new file mode 100644
+index 0000000..0b2207f
+--- /dev/null
++++ b/src/debug_bundle.rs
+@@ -0,0 +1,214 @@
++//! Forensics collector for TITAN-CORE Mod v2.2:
++//! - Bounded 256-slot error/errno ring buffer
++//! - Real FreeBSD getrusage + KERN_PROC_VMMAP region counter & AMPR map check
++//! - Active nullfs/unionfs mount graph & collision detector (getmntinfo)
++//! - Atomic /data/titan-core/debug/ bundle export & panic-crash writer
++
++use serde_json::{json, Value};
++use std::collections::VecDeque;
++use std::fs;
++use std::path::Path;
++use std::sync::{Mutex, OnceLock};
++
++pub const DEBUG_DIR: &str = "/data/titan-core/debug";
++const MAX_ERRORS: usize = 256;
++
++#[derive(Clone)]
++pub struct RecordedError {
++    pub ts_ms: u64,
++    pub title_id: String,
++    pub errno: i32,
++    pub message: String,
++}
++
++fn ring() -> &'static Mutex<VecDeque<RecordedError>> {
++    static RING: OnceLock<Mutex<VecDeque<RecordedError>>> = OnceLock::new();
++    RING.get_or_init(|| Mutex::new(VecDeque::with_capacity(MAX_ERRORS)))
++}
++
++fn now_ms() -> u64 {
++    let mut ts: libc::timespec = unsafe { std::mem::zeroed() };
++    unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut ts) };
++    (ts.tv_sec as u64)
++        .saturating_mul(1000)
++        .saturating_add((ts.tv_nsec as u64) / 1_000_000)
++}
++
++pub fn record_error(title_id: &str, errno: i32, message: impl Into<String>) {
++    let mut q = ring().lock().unwrap_or_else(|e| e.into_inner());
++    if q.len() >= MAX_ERRORS {
++        q.pop_front();
++    }
++    q.push_back(RecordedError {
++        ts_ms: now_ms(),
++        title_id: title_id.to_owned(),
++        errno,
++        message: message.into(),
++    });
++}
++
++pub fn error_dump_json() -> Value {
++    let q = ring().lock().unwrap_or_else(|e| e.into_inner());
++    let items: Vec<Value> = q
++        .iter()
++        .map(|e| json!({"ts_ms": e.ts_ms, "title_id": e.title_id, "errno": e.errno, "message": e.message}))
++        .collect();
++    let crash_bundle = fs::read_to_string(Path::new(DEBUG_DIR).join("last-crash-bundle.json")).ok();
++    json!({
++        "count": items.len(),
++        "capacity": MAX_ERRORS,
++        "errors": items,
++        "last_crash_bundle": crash_bundle,
++    })
++}
++
++#[cfg(target_os = "freebsd")]
++fn inspect_vmmap(pid: libc::pid_t) -> (usize, bool) {
++    // FreeBSD KERN_PROC_VMMAP = 32
++    let mut mib = [libc::CTL_KERN, libc::KERN_PROC, 32, pid];
++    let mut vm_bytes: libc::size_t = 0;
++    let vm_ok = unsafe {
++        libc::sysctl(mib.as_mut_ptr(), 4, std::ptr::null_mut(), &mut vm_bytes, std::ptr::null(), 0) == 0
++    };
++    let mut ampr_mapped = false;
++    let mut vm_regions = 0usize;
++    if vm_ok && vm_bytes > 0 && vm_bytes <= (4 << 20) {
++        let mut buf = vec![0u8; vm_bytes];
++        if unsafe { libc::sysctl(mib.as_mut_ptr(), 4, buf.as_mut_ptr().cast(), &mut vm_bytes, std::ptr::null(), 0) == 0 } {
++            let mut off = 0usize;
++            while off + 4 <= vm_bytes {
++                let sz = i32::from_ne_bytes(buf[off..off + 4].try_into().unwrap_or([0; 4])) as usize;
++                if sz < 8 || off + sz > vm_bytes {
++                    break;
++                }
++                vm_regions += 1;
++                if buf[off..off + sz]
++                    .windows(10)
++                    .any(|w| w.eq_ignore_ascii_case(b"libSceAmpr"))
++                {
++                    ampr_mapped = true;
++                }
++                off += sz;
++            }
++        }
++    }
++    (vm_regions, ampr_mapped)
++}
++
++#[cfg(not(target_os = "freebsd"))]
++fn inspect_vmmap(_pid: libc::pid_t) -> (usize, bool) {
++    (0, false)
++}
++
++pub fn memory_snapshot_json() -> Value {
++    let mut ru: libc::rusage = unsafe { std::mem::zeroed() };
++    unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut ru) };
++    let pid = unsafe { libc::getpid() };
++    let (vm_regions, ampr_mapped) = inspect_vmmap(pid);
++    let free_data_gib = crate::storage::drives()
++        .into_iter()
++        .find(|d| d.mount == "/data")
++        .map_or(0.0, |d| (d.free as f64) / ((1u64 << 30) as f64));
++
++    json!({
++        "pid": pid,
++        "rss_kib": ru.ru_maxrss,
++        "rss_mib": (ru.ru_maxrss as f64 / 1024.0).round() as u64,
++        "page_faults_minor": ru.ru_minflt,
++        "page_faults_major": ru.ru_majflt,
++        "ctx_voluntary": ru.ru_nvcsw,
++        "ctx_involuntary": ru.ru_nivcsw,
++        "vm_regions_count": vm_regions,
++        "ampr_mapped": ampr_mapped,
++        "ampr_pool_mib": 256,
++        "flexible_budget_mib": 448,
++        "free_data_gib": free_data_gib,
++    })
++}
++
++#[cfg(target_os = "freebsd")]
++pub fn mounts_snapshot_json() -> Value {
++    use std::collections::BTreeMap;
++    use std::ffi::CStr;
++
++    let mut p: *mut libc::statfs = std::ptr::null_mut();
++    let n = unsafe { libc::getmntinfo(&mut p, libc::MNT_NOWAIT) };
++    let mut list = Vec::new();
++    let mut common_lib_counts: BTreeMap<String, usize> = BTreeMap::new();
++    if n > 0 && !p.is_null() {
++        let slice = unsafe { std::slice::from_raw_parts(p, n as usize) };
++        for m in slice {
++            let fstype = unsafe { CStr::from_ptr(m.f_fstypename.as_ptr()) }.to_string_lossy().into_owned();
++            let from = unsafe { CStr::from_ptr(m.f_mntfromname.as_ptr()) }.to_string_lossy().into_owned();
++            let on = unsafe { CStr::from_ptr(m.f_mntonname.as_ptr()) }.to_string_lossy().into_owned();
++            if fstype == "unionfs" && on.contains("common/lib") {
++                *common_lib_counts.entry(on.clone()).or_insert(0) += 1;
++            }
++            list.push(json!({
++                "fstype": fstype,
++                "from": from,
++                "on": on,
++                "rdonly": (m.f_flags & (libc::MNT_RDONLY as u64)) != 0,
++            }));
++        }
++    }
++    let collisions: Vec<String> = common_lib_counts
++        .into_iter()
++        .filter(|(_, c)| *c > 1)
++        .map(|(k, _)| k)
++        .collect();
++    json!({ "mounts": list, "unionfs_collisions": collisions })
++}
++
++#[cfg(not(target_os = "freebsd"))]
++pub fn mounts_snapshot_json() -> Value {
++    json!({ "mounts": [], "unionfs_collisions": [] })
++}
++
++pub fn write_bundle(filename: &str, formats: Value) -> Result<Value, String> {
++    write_bundle_in(Path::new(DEBUG_DIR), filename, formats)
++}
++
++pub fn write_bundle_in(dir: &Path, filename: &str, formats: Value) -> Result<Value, String> {
++    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
++    let bundle = json!({
++        "version": format!("{}-mod-v2.2", env!("CARGO_PKG_VERSION")),
++        "amprVersion": "0.4.1-3ced5c0",
++        "memory": memory_snapshot_json(),
++        "mounts": mounts_snapshot_json(),
++        "errors": error_dump_json(),
++        "formatsDetected": formats,
++    });
++    let out_path = dir.join(filename);
++    let tmp = dir.join(format!("{filename}.tmp"));
++    fs::write(&tmp, serde_json::to_vec_pretty(&bundle).map_err(|e| e.to_string())?)
++        .map_err(|e| e.to_string())?;
++    fs::rename(&tmp, &out_path).map_err(|e| e.to_string())?;
++    Ok(bundle)
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn ring_buffer_is_bounded_and_preserves_latest() {
++        for i in 0..300 {
++            record_error("PPSA00001", i, format!("err-{i}"));
++        }
++        let dump = error_dump_json();
++        let arr = dump["errors"].as_array().unwrap();
++        assert_eq!(arr.len(), MAX_ERRORS);
++        assert_eq!(arr.last().unwrap()["errno"], 299);
++    }
++
++    #[test]
++    fn atomic_bundle_writer_persists_valid_json() {
++        let dir = std::env::temp_dir().join(format!("titan_dbg_{}", std::process::id()));
++        let _ = fs::remove_dir_all(&dir);
++        let written = write_bundle_in(&dir, "test-bundle.json", json!({"formats": {}})).unwrap();
++        assert_eq!(written["amprVersion"], "0.4.1-3ced5c0");
++        assert!(dir.join("test-bundle.json").is_file());
++        let _ = fs::remove_dir_all(&dir);
++    }
++}
+diff --git a/src/dump_formats.rs b/src/dump_formats.rs
+new file mode 100644
+index 0000000..2683d21
+--- /dev/null
++++ b/src/dump_formats.rs
+@@ -0,0 +1,133 @@
++//! Unified PS5 13.60 dump format registry and classifier for TITAN-CORE Mod v2.2.
++//! Covers unpacked folders (plain/lz4/zstd), debug/sparse/split FPKGs (.pkg),
++//! UFS2/compressed PFS images (.ffpkg/.ffpfsc), standalone archives (.zst/.lz4),
++//! and raw/exFAT disk images (.exfat/.img).
++
++use serde_json::{json, Value};
++use std::collections::BTreeMap;
++use std::path::Path;
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
++pub enum DumpFormat {
++    FolderPlain,
++    FolderLz4,
++    FolderZstd,
++    PkgStandardOrSparse,
++    PkgSplitPart,
++    PfsFfpkg,
++    PfsFfpfsc,
++    ArchiveZstd,
++    ArchiveLz4,
++    DiskExfatOrImg,
++}
++
++impl DumpFormat {
++    pub fn as_str(self) -> &'static str {
++        match self {
++            Self::FolderPlain => "folder-plain",
++            Self::FolderLz4 => "folder-lz4",
++            Self::FolderZstd => "folder-zstd",
++            Self::PkgStandardOrSparse => "pkg-debug-sparse",
++            Self::PkgSplitPart => "pkg-split-part",
++            Self::PfsFfpkg => "pfs-ffpkg",
++            Self::PfsFfpfsc => "pfs-ffpfsc",
++            Self::ArchiveZstd => "archive-zstd",
++            Self::ArchiveLz4 => "archive-lz4",
++            Self::DiskExfatOrImg => "image-exfat-img",
++        }
++    }
++
++    pub fn engine_hint(self) -> &'static str {
++        match self {
++            Self::FolderPlain | Self::FolderLz4 | Self::FolderZstd | Self::PkgStandardOrSparse => "titan-native",
++            Self::PkgSplitPart => "merge-split-parts-first",
++            Self::PfsFfpkg | Self::PfsFfpfsc | Self::DiskExfatOrImg => "shadowmountplus-1.7b12",
++            Self::ArchiveZstd | Self::ArchiveLz4 => "kraken-or-unpack-host",
++        }
++    }
++}
++
++pub fn classify_path(path: &Path) -> Option<DumpFormat> {
++    if path.is_dir() {
++        if path.join("ampr_zstd.index").is_file() || path.join("apr.zstd.chunks").is_file() {
++            return Some(DumpFormat::FolderZstd);
++        }
++        if path.join("ampr_assets.index").is_file() {
++            return Some(DumpFormat::FolderLz4);
++        }
++        if path.join("eboot.bin").is_file() && path.join("sce_sys/param.json").is_file() {
++            return Some(DumpFormat::FolderPlain);
++        }
++        return None;
++    }
++    let ext = path.extension()?.to_str()?.to_ascii_lowercase();
++    match ext.as_str() {
++        "pkg" => {
++            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
++            let is_split = stem
++                .rsplit_once('_')
++                .is_some_and(|(_, n)| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()));
++            Some(if is_split {
++                DumpFormat::PkgSplitPart
++            } else {
++                DumpFormat::PkgStandardOrSparse
++            })
++        }
++        "ffpkg" => Some(DumpFormat::PfsFfpkg),
++        "ffpfsc" => Some(DumpFormat::PfsFfpfsc),
++        "zst" | "zstd" => Some(DumpFormat::ArchiveZstd),
++        "lz4" => Some(DumpFormat::ArchiveLz4),
++        "exfat" | "img" => Some(DumpFormat::DiskExfatOrImg),
++        _ => None,
++    }
++}
++
++pub fn summarize_inventory(native: &[Value], images: &[Value]) -> Value {
++    let mut counts: BTreeMap<&'static str, usize> = BTreeMap::new();
++    for g in native.iter().chain(images.iter()) {
++        let p = g["path"].as_str().map(Path::new);
++        if let Some(fmt) = p.and_then(classify_path) {
++            *counts.entry(fmt.as_str()).or_insert(0) += 1;
++        }
++    }
++    json!({
++        "formats": counts,
++        "ampr_pool_mib": 256,
++        "cnt_fallbacks": 16,
++        "supported_extensions": [".pkg", ".ffpkg", ".ffpfsc", ".zst", ".zstd", ".lz4", ".exfat", ".img"],
++    })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::fs;
++
++    #[test]
++    fn classifies_all_supported_extensions_and_split_pkgs() {
++        assert_eq!(classify_path(Path::new("/data/games/PPSA01234.pkg")), Some(DumpFormat::PkgStandardOrSparse));
++        assert_eq!(classify_path(Path::new("/mnt/usb0/games/game_0.pkg")), Some(DumpFormat::PkgSplitPart));
++        assert_eq!(classify_path(Path::new("/mnt/usb0/homebrew/demo.ffpkg")), Some(DumpFormat::PfsFfpkg));
++        assert_eq!(classify_path(Path::new("/mnt/usb0/homebrew/demo.ffpfsc")), Some(DumpFormat::PfsFfpfsc));
++        assert_eq!(classify_path(Path::new("/data/homebrew/bundle.zst")), Some(DumpFormat::ArchiveZstd));
++        assert_eq!(classify_path(Path::new("/data/homebrew/bundle.lz4")), Some(DumpFormat::ArchiveLz4));
++        assert_eq!(classify_path(Path::new("/data/homebrew/disk.exfat")), Some(DumpFormat::DiskExfatOrImg));
++        assert_eq!(classify_path(Path::new("/data/homebrew/disk.img")), Some(DumpFormat::DiskExfatOrImg));
++        assert_eq!(classify_path(Path::new("/data/homebrew/readme.txt")), None);
++    }
++
++    #[test]
++    fn classifies_folder_variants() {
++        let tmp = std::env::temp_dir().join(format!("titan_fmt_{}", std::process::id()));
++        let _ = fs::remove_dir_all(&tmp);
++        fs::create_dir_all(tmp.join("sce_sys")).unwrap();
++        fs::write(tmp.join("eboot.bin"), b"ELF").unwrap();
++        fs::write(tmp.join("sce_sys/param.json"), b"{}").unwrap();
++        assert_eq!(classify_path(&tmp), Some(DumpFormat::FolderPlain));
++        fs::write(tmp.join("ampr_assets.index"), b"AMPR").unwrap();
++        assert_eq!(classify_path(&tmp), Some(DumpFormat::FolderLz4));
++        fs::write(tmp.join("ampr_zstd.index"), b"AMPR").unwrap();
++        assert_eq!(classify_path(&tmp), Some(DumpFormat::FolderZstd));
++        let _ = fs::remove_dir_all(&tmp);
++    }
++}
+diff --git a/src/library.rs b/src/library.rs
+index 324c80f..5afd3b7 100644
+--- a/src/library.rs
++++ b/src/library.rs
+@@ -22,12 +22,14 @@ pub fn discover_exfat(roots: &[String]) -> Vec<Value> {
+             let Ok(kind)=entry.file_type() else{continue};let path=entry.path();
+             if kind.is_symlink(){continue}
+             if kind.is_dir() && depth>0 && !path.join("eboot.bin").is_file() {visit(&path,depth-1,seen,out);continue}
+-            if !kind.is_file() || !path.extension().is_some_and(|e|e.eq_ignore_ascii_case("exfat")){continue}
++            if !kind.is_file() {continue}
++            let Some(fmt) = crate::dump_formats::classify_path(&path) else {continue};
++            if matches!(fmt, crate::dump_formats::DumpFormat::PkgStandardOrSparse) {continue}
+             let canonical=std::fs::canonicalize(&path).unwrap_or(path.clone());if !seen.insert(canonical){continue}
+             let size=entry.metadata().ok().map(|m|m.len());
+             let name=path.file_stem().unwrap_or_default().to_string_lossy();
+             out.push(json!({"source_id":image_id(&path),"title_id":"","title_name":name,"version":"",
+-                "path":path.to_string_lossy(),"drive":if path.starts_with("/mnt"){path.to_string_lossy().split('/').take(3).collect::<Vec<_>>().join("/")}else{"/data".into()},"kind":"image","image_type":"exfatfs","engine":"images",
++                "path":path.to_string_lossy(),"drive":if path.starts_with("/mnt"){path.to_string_lossy().split('/').take(3).collect::<Vec<_>>().join("/")}else{"/data".into()},"kind":"image","image_type":fmt.as_str(),"dump_format":fmt.as_str(),"recommended_engine":fmt.engine_hint(),"engine":"images",
+                 "status":"engine_required","size":size,"metadata_source":"filename","mounted":false,
+                 "cache_size":null,"cache_built":null,"backport":null,"error":null}));
+         }
+diff --git a/src/main.rs b/src/main.rs
+index 53834be..2ccd87f 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -8,6 +8,8 @@
+ #[macro_use]
+ mod sys;
+ mod ampr_index;
++mod debug_bundle;
++mod dump_formats;
+ mod cache;
+ mod config;
+ mod launch;
+@@ -93,6 +95,7 @@ fn build_and_register(state: &State, s: &Settings, src: &Source, fresh: &Fresh,
+     if !stale && register::is_registered(tid) {
+         // ponytail: registered by an earlier run; only the nullfs is redone (gone after a
+         // reboot; a no-op when mounted): no sce_sys copy, no install call.
++        cache::fix_access(src);
+         register::mount(tid, &app0, backport_of(src))?;
+         return Ok(false);
+     }
+@@ -108,6 +111,7 @@ fn build_and_register(state: &State, s: &Settings, src: &Source, fresh: &Fresh,
+         check_space(state, s);
+         r?;
+     }
++    cache::fix_access(src);
+     register::register(tid, &app0, &cache::sce_sys(src), backport_of(src))?;
+     Ok(true)
+ }
+@@ -139,6 +143,7 @@ fn process(state: &State, s: &Settings, src: &Source, registered: &mut HashSet<S
+     } else if !forced && matches!(fresh, Fresh::Fresh) && registered.contains(tid) {
+         // Each scan: redo /system_ex/app/<TID> when it is gone or stale (USB replug, rest
+         // mode); a no-op when app0 is mounted there. Status stays "ready" (no UI flicker).
++        cache::fix_access(src);
+         match register::mount(tid, &cache::app0(src), backport_of(src)) {
+             Ok(()) => {
+                 #[cfg(feature="unified-stack")]
+@@ -175,6 +180,7 @@ fn process(state: &State, s: &Settings, src: &Source, registered: &mut HashSet<S
+         Err(e) => {
+             let e = format!("{tid} ({}): {e}", src.path.display());
+             log!("{e}");
++            debug_bundle::record_error(tid, std::io::Error::last_os_error().raw_os_error().unwrap_or(0), e.clone());
+             failed.insert(src.path.clone(), inputs_key(src, s));
+             state.update(&src.path, |g| {
+                 (g.status, g.error, g.cache_size, g.cache_built) = ("error", Some(e.clone()), size, built);
+@@ -331,11 +337,21 @@ fn prepare_ampr() {
+             log!("ampr: WARNING {} overrides the system libkernel in every game; remove it unless intended", path.display());
+         }
+     }
++    if std::path::Path::new("/data/ampr_cache").exists() {
++        let _ = std::fs::remove_dir_all("/data/ampr_cache");
++    }
+ }
+ 
+ fn main() {
+-    // panic=abort: record the panic in titan-core.log before the payload dies.
+-    std::panic::set_hook(Box::new(|info| sys::log_line(&format!("PANIC: {info}"))));
++    // umask 0 so dirs/files created by the payload stay readable/writable for game & system UIDs.
++    unsafe { libc::umask(0) };
++    // panic=abort: record the panic in titan-core.log + crash debug bundle before the payload dies.
++    std::panic::set_hook(Box::new(|info| {
++        let msg = format!("PANIC: {info}");
++        sys::log_line(&msg);
++        debug_bundle::record_error("PANIC", 0, msg);
++        let _ = debug_bundle::write_bundle("last-crash-bundle.json", serde_json::json!({}));
++    }));
+     // Take ownership before renaming cache directories used by an older process.
+     let Some(listener)=web::take_port() else{sys::notify("TITAN CORE: close the running game before upgrading");return;};
+     let migration=match migration::migrate(std::path::Path::new("/data/krakenmount"),std::path::Path::new(DATA_DIR)){Ok(report)=>report,Err(e)=>{sys::notify(&format!("TITAN CORE: data migration stopped: {e}"));return;}};
+@@ -417,7 +433,19 @@ fn main() {
+                     };
+                     log!("{tid}: native package kept in place at {}; preparing native cache",src.path.display());Ok(src)
+                 })();
+-                match prepared{Ok(src)=>r.games.push(src),Err(error)=>{if state.installed_errors.lock().unwrap().get(path.to_string_lossy().as_ref())!=Some(&error){log!("Installed FPKG {tid}: {error}");}r.errors.push((path,error));}}
++                match prepared{
++                    Ok(src)=>r.games.push(src),
++                    Err(error) if error.contains("a retail package") => {
++                        static RETAIL_LOGGED: std::sync::OnceLock<std::sync::Mutex<HashSet<String>>> = std::sync::OnceLock::new();
++                        if RETAIL_LOGGED.get_or_init(|| std::sync::Mutex::new(HashSet::new())).lock().unwrap().insert(tid.to_string()) {
++                            log!("Installed retail app {tid}: skipped (not an FPKG)");
++                        }
++                    }
++                    Err(error)=>{
++                        if state.installed_errors.lock().unwrap().get(path.to_string_lossy().as_ref())!=Some(&error){log!("Installed FPKG {tid}: {error}");}
++                        r.errors.push((path,error));
++                    }
++                }
+             }
+         }
+         *state.installed_errors.lock().unwrap()=r.errors.iter().filter(|(p,_)|library::installed_package_path(p)).map(|(p,e)|(p.to_string_lossy().into_owned(),e.clone())).collect();
+diff --git a/src/register.rs b/src/register.rs
+index 583927e..937b64a 100644
+--- a/src/register.rs
++++ b/src/register.rs
+@@ -32,16 +32,41 @@ fn ctx<T>(r: io::Result<T>, what: impl FnOnce() -> String) -> io::Result<T> {
+     r.map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", what())))
+ }
+ 
++/// SMP copy_param_json_rewrite: the first `upgradable` becomes `standard` (applicationDrmType),
++/// so the system does not treat the title as an upgradable (disc/patch) app.
++fn patch_param_json(buf: &mut Vec<u8>) -> bool {
++    const FROM: &[u8] = b"upgradable";
++    let Some(i) = buf.windows(FROM.len()).position(|w| w == FROM) else { return false };
++    buf.splice(i..i + FROM.len(), b"standard".iter().copied());
++    true
++}
++
++/// One staged file: overwritten when present, then 0666 so save and trophy services can read it.
++fn copy_file(title_id: &str, src: &Path, dst: &Path) -> io::Result<()> {
++    use std::os::unix::fs::PermissionsExt;
++    if src.file_name().is_some_and(|n| n == "param.json") {
++        let mut buf = fs::read(src)?;
++        let patched = patch_param_json(&mut buf);
++        fs::write(dst, &buf)?;
++        if patched {
++            log!("{title_id}: param.json patched: {}", dst.display());
++        }
++    } else {
++        fs::copy(src, dst)?;
++    }
++    fs::set_permissions(dst, fs::Permissions::from_mode(0o666))
++}
++
+ /// Recursive copy, like SMP copy_dir: existing files are overwritten.
+-fn copy_dir(src: &Path, dst: &Path) -> io::Result<()> {
++fn copy_dir(title_id: &str, src: &Path, dst: &Path) -> io::Result<()> {
+     fs::create_dir_all(dst)?;
+     for e in fs::read_dir(src)? {
+         let e = e?;
+         let (s, d) = (e.path(), dst.join(e.file_name()));
+         if e.file_type()?.is_dir() {
+-            copy_dir(&s, &d)?;
++            copy_dir(title_id, &s, &d)?;
+         } else {
+-            fs::copy(&s, &d)?;
++            copy_file(title_id, &s, &d)?;
+         }
+     }
+     Ok(())
+@@ -57,7 +82,7 @@ fn is_appmeta_file(name: &str) -> bool {
+ }
+ 
+ /// Top-level param.json, param.sfo, *.png, *.dds, *.at9 from sce_sys into /user/appmeta/<TID>.
+-fn copy_appmeta(src_sce_sys: &Path, dst: &Path) -> io::Result<()> {
++fn copy_appmeta(title_id: &str, src_sce_sys: &Path, dst: &Path) -> io::Result<()> {
+     fs::create_dir_all(dst)?;
+     for e in fs::read_dir(src_sce_sys)? {
+         let e = e?;
+@@ -66,21 +91,31 @@ fn copy_appmeta(src_sce_sys: &Path, dst: &Path) -> io::Result<()> {
+         if !is_appmeta_file(name_str) || !e.file_type()?.is_file() {
+             continue;
+         }
+-        fs::copy(e.path(), dst.join(&name))?;
++        copy_file(title_id, &e.path(), &dst.join(&name))?;
+     }
+     Ok(())
+ }
+ 
+ /// SMP update_trophy_metadata: copy npbind.dat files and param.json to
+ /// /system_data/priv/appmeta/<TID> when present in the source and absent at the destination.
++/// Existing files get +0444 when a read bit is missing, so the trophy service can read them.
+ fn update_trophy_metadata(title_id: &str, src_sce_sys: &Path) -> io::Result<()> {
++    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+     let base = Path::new(TROPHY_BASE).join(title_id);
+     fs::create_dir_all(base.join("trophy2"))?;
+     fs::create_dir_all(base.join("uds"))?;
+     for rel in ["trophy2/npbind.dat", "uds/npbind.dat", "param.json"] {
+         let (s, d) = (src_sce_sys.join(rel), base.join(rel));
+-        if s.exists() && !d.exists() {
+-            ctx(fs::copy(&s, &d), || format!("copy {} -> {}", s.display(), d.display()))?;
++        if !s.exists() {
++            continue;
++        }
++        match fs::metadata(&d) {
++            Err(_) => ctx(copy_file(title_id, &s, &d), || format!("copy {} -> {}", s.display(), d.display()))?,
++            Ok(m) if m.is_file() && m.mode() & 0o444 != 0o444 => {
++                let mode = fs::Permissions::from_mode((m.mode() & 0o7777) | 0o444);
++                ctx(fs::set_permissions(&d, mode), || format!("chmod {}", d.display()))?;
++            }
++            Ok(_) => {}
+         }
+     }
+     Ok(())
+@@ -345,15 +380,15 @@ pub fn register(title_id: &str, app0: &Path, sce_sys: &Path, backport: Option<&P
+ fn register_inner(title_id: &str, app0: &Path, sce_sys: &Path, backport: Option<&Path>) -> io::Result<()> {
+     let app_dir = Path::new(APP_BASE).join(title_id);
+     let user_sce_sys = app_dir.join("sce_sys");
+-    ctx(copy_dir(sce_sys, &user_sce_sys), || {
++    ctx(copy_dir(title_id, sce_sys, &user_sce_sys), || {
+         format!("copy {} -> {}", sce_sys.display(), user_sce_sys.display())
+     })?;
+     let (icon_src, icon_dst) = (sce_sys.join("icon0.png"), app_dir.join("icon0.png"));
+-    ctx(fs::copy(&icon_src, &icon_dst), || {
++    ctx(copy_file(title_id, &icon_src, &icon_dst), || {
+         format!("copy {} -> {}", icon_src.display(), icon_dst.display())
+     })?;
+     let appmeta = Path::new(APPMETA_BASE).join(title_id);
+-    ctx(copy_appmeta(sce_sys, &appmeta), || format!("appmeta -> {}", appmeta.display()))?;
++    ctx(copy_appmeta(title_id, sce_sys, &appmeta), || format!("appmeta -> {}", appmeta.display()))?;
+     ctx(update_trophy_metadata(title_id, sce_sys), || "trophy metadata".into())?;
+     mount_inner(title_id, app0, backport, false)?;
+     install_title_dir(title_id)
+diff --git a/src/scan.rs b/src/scan.rs
+index 1bfb659..d5ebcc3 100644
+--- a/src/scan.rs
++++ b/src/scan.rs
+@@ -159,7 +159,21 @@ pub fn scan(roots: &[String], backports: bool) -> ScanResult {
+             match entry {
+                 // Dot entries (macOS ._X.pkg AppleDouble files) are skipped, as in SMP.
+                 Ok(entry) if entry.file_name().to_string_lossy().starts_with('.') => {}
+-                Ok(entry) => paths.push(entry.path()),
++                Ok(entry) => {
++                    let p = entry.path();
++                    let fname = entry.file_name().to_string_lossy().into_owned();
++                    let is_direct_game = p.is_dir() && p.join("eboot.bin").is_file() && p.join("sce_sys/param.json").is_file();
++                    if p.is_dir() && !is_direct_game && fname != "backports" && fname != "titan-core" {
++                        if let Ok(sub_entries) = fs::read_dir(&p) {
++                            for sub in sub_entries.flatten() {
++                                if !sub.file_name().to_string_lossy().starts_with('.') {
++                                    paths.push(sub.path());
++                                }
++                            }
++                        }
++                    }
++                    paths.push(p);
++                }
+                 Err(e) => scan_error(&mut result, root.to_path_buf(), e),
+             }
+         }
+@@ -177,6 +191,8 @@ pub fn scan(roots: &[String], backports: bool) -> ScanResult {
+                 // External download archives belong to Installer, never automatic mount discovery.
+                 // Only a receipt-proven TITAN installation or a genuine system PKG path is playable.
+                 if crate::storage::drive_of(&path) != "/data"
++                    && !path.to_string_lossy().contains("/homebrew/")
++                    && !path.to_string_lossy().contains("/games/")
+                     && !crate::library::installed_package_path(&path)
+                     && !installed_roots.iter().any(|dir| {
+                         let dir = Path::new(dir);
+@@ -185,6 +201,12 @@ pub fn scan(roots: &[String], backports: bool) -> ScanResult {
+                     }) {
+                     continue;
+                 }
++                if matches!(crate::dump_formats::classify_path(&path), Some(crate::dump_formats::DumpFormat::PkgSplitPart)) {
++                    let msg = "split PKG part detected (*_0.pkg); merge parts before mounting";
++                    crate::debug_bundle::record_error("SCAN", libc::EINVAL, format!("{}: {msg}", path.display()));
++                    scan_error(&mut result, path, msg);
++                    continue;
++                }
+                 let mtime = match metadata.modified() {
+                     Ok(mtime) => mtime,
+                     Err(e) => {
+diff --git a/src/stack.rs b/src/stack.rs
+index 1fb518e..c0620a9 100644
+--- a/src/stack.rs
++++ b/src/stack.rs
+@@ -16,9 +16,9 @@ pub fn native_permitted()->bool{NATIVE_ALLOWED.load(Ordering::Acquire)}
+ use std::time::Duration;
+ 
+ const KSTUFF: &[u8] = include_bytes!("../vendor/unified/kstuff-lite-v1.11.elf");
+-const SHADOW: &[u8] = include_bytes!("../vendor/unified/shadowmountplus-1.7beta10.elf");
++const SHADOW: &[u8] = include_bytes!("../vendor/unified/shadowmountplus-1.7beta12.elf");
+ const KSTUFF_PATH: &str = "/data/titan-core/payloads/kstuff-lite-v1.11.elf";
+-const SHADOW_PATH: &str = "/data/titan-core/payloads/shadowmountplus-1.7beta10.elf";
++const SHADOW_PATH: &str = "/data/titan-core/payloads/shadowmountplus-1.7beta12.elf";
+ // system_tmp is boot-scoped. Never remove another launch's attempt marker.
+ #[cfg(target_os = "freebsd")]
+ fn boot_identity() -> Option<(u64,u64)> {
+@@ -144,7 +144,7 @@ impl Stack {
+         let s = self.snapshot.lock().unwrap_or_else(|e| e.into_inner());
+         json!({"phase":s.phase,"detail":s.detail,"firmware":s.firmware,"api_port":s.port,
+             "kstuff_ready":s.kstuff,"shadowmount_ready":s.shadow,"library_fresh":s.updated,
+-            "kstuff_bundle":"1.11","shadowmount_bundle":"1.7beta10","mount_owner":"per-title","mode":"combined","native_ready":native_permitted()})
++            "kstuff_bundle":"1.11","shadowmount_bundle":"1.7beta12","mount_owner":"per-title","mode":"combined","native_ready":native_permitted()})
+     }
+     pub fn games(&self) -> Vec<Value> { self.snapshot.lock().unwrap_or_else(|e| e.into_inner()).games.clone() }
+     pub fn port(&self) -> u16 { self.snapshot.lock().unwrap_or_else(|e| e.into_inner()).port }
+@@ -234,14 +234,28 @@ impl Stack {
+         match stack_policy::boot_decision(kstuff, shadow, previous) {
+             stack_policy::BootDecision::Reuse => { self.phase("ready", "Existing services reused without reloading"); return Ok(()); }
+             stack_policy::BootDecision::Inconsistent => return Err("ShadowMount responds but kstuff readiness is unconfirmed; no reload attempted".into()),
+-            stack_policy::BootDecision::ObservePrevious => self.phase("waiting", "A startup was already attempted this boot; observing without duplicate launches"),
++            stack_policy::BootDecision::ObservePrevious => {
++                if kstuff && !shadow {
++                    let (_, shadow_process) = dependency_processes()?;
++                    if !shadow_process {
++                        self.phase("starting", "kstuff/HEN active; starting ShadowMountPlus 1.7beta12");
++                        fs::create_dir_all("/data/titan-core/payloads").map_err(|e| e.to_string())?;
++                        install(SHADOW_PATH, SHADOW)?;
++                        if let Err(e) = dispatch(SHADOW_PATH) { log!("unified: ShadowMount dispatch uncertain: {e}; not retrying"); }
++                    } else {
++                        self.phase("waiting", "Existing ShadowMount process observed; waiting without restart");
++                    }
++                } else {
++                    self.phase("waiting", "A startup was already attempted this boot; observing without duplicate launches");
++                }
++            }
+             stack_policy::BootDecision::Start => {
+                 let (kstuff_process,shadow_process) = dependency_processes()?;
+                 fs::create_dir_all("/data/titan-core/payloads").map_err(|e| e.to_string())?;
+                 install(KSTUFF_PATH, KSTUFF)?; install(SHADOW_PATH, SHADOW)?;
+                 // One atomic attempt per boot, including across TITAN restarts.
+                 let mut marker = OpenOptions::new().write(true).create_new(true).open(&attempt).map_err(|e| format!("Startup attempt already owned or unavailable: {e}"))?;
+-                marker.write_all(b"ShadowMountPlus 1.7beta10 + kstuff-lite 1.11\n").map_err(|e| e.to_string())?;
++                marker.write_all(b"ShadowMountPlus 1.7beta12 + kstuff-lite 1.11\n").map_err(|e| e.to_string())?;
+                 self.phase("starting", "Starting ShadowMount before kstuff");
+                 // ShadowMount creates its no-automount sentinel before waiting for kstuff.
+                 if shadow_process {
+@@ -258,6 +272,8 @@ impl Stack {
+                     if !kstuff_ready() && !kstuff_process {
+                         self.phase("starting", "Starting pinned kstuff-lite 1.11");
+                         if let Err(e) = dispatch(KSTUFF_PATH) { log!("unified: kstuff dispatch uncertain: {e}; not retrying"); }
++                    } else if kstuff_process {
++                        self.phase("waiting", "Existing kstuff/OnionHEN/etaHEN process detected; skipping bundled kstuff-lite");
+                     }
+                 }
+             }
+diff --git a/src/stack_policy.rs b/src/stack_policy.rs
+index 3060ec9..7530f1f 100644
+--- a/src/stack_policy.rs
++++ b/src/stack_policy.rs
+@@ -47,8 +47,12 @@ pub fn dependency_presence(bytes: &[u8]) -> Result<(bool,bool),String> {
+         let name = &rest[447..size as usize];
+         let end = name.iter().position(|b| *b == 0).ok_or("Unterminated process name")?;
+         let name = &name[..end];
+-        kstuff |= name.starts_with(b"kstuff") || name.starts_with(b"ps5-kstuff");
+-        shadow |= name.starts_with(b"shadowmountplus");
++        let lower: Vec<u8> = name.iter().map(|b| b.to_ascii_lowercase()).collect();
++        kstuff |= lower.starts_with(b"kstuff")
++            || lower.starts_with(b"ps5-kstuff")
++            || lower.starts_with(b"onionhen")
++            || lower.starts_with(b"etahen");
++        shadow |= lower.starts_with(b"shadowmountplus");
+         offset += size as usize;
+     }
+     Ok((kstuff,shadow))
+@@ -78,6 +82,14 @@ mod tests {
+         assert!(dependency_presence(&[]).is_err());assert!(dependency_presence(&[0;10]).is_err());
+         let mut record=vec![0u8;500];record[..4].copy_from_slice(&700i32.to_ne_bytes());assert!(dependency_presence(&record).is_err());
+     }
++    #[test] fn detects_onionhen_and_etahen_case_insensitively() {
++        for proc_name in [b"OnionHEN.elf".as_slice(), b"etaHEN.elf".as_slice(), b"kstuff-lite".as_slice()] {
++            let mut record = vec![0u8; 600];
++            record[..4].copy_from_slice(&600i32.to_ne_bytes());
++            record[447..447 + proc_name.len()].copy_from_slice(proc_name);
++            assert_eq!(dependency_presence(&record), Ok((true, false)));
++        }
++    }
+     #[test] fn unrelated_processes_do_not_match() {
+         let mut record=vec![0u8;600];record[..4].copy_from_slice(&600i32.to_ne_bytes());record[447..452].copy_from_slice(b"titan");assert_eq!(dependency_presence(&record),Ok((false,false)));
+     }
+diff --git a/src/storage.rs b/src/storage.rs
+index be0878d..22fee65 100644
+--- a/src/storage.rs
++++ b/src/storage.rs
+@@ -67,12 +67,14 @@ pub fn default_scan_roots() -> Vec<String> {
+     let present = mounted_aliases();
+     let ext: Vec<String> = (0..EXT).map(|i| format!("/mnt/ext{i}")).collect();
+     let usb: Vec<String> = (0..USB).map(|i| format!("/mnt/usb{i}")).collect();
+-    let mut all = vec!["/data/homebrew".to_string(), "/data/etaHEN/games".to_string()];
++    let mut all = vec!["/data/homebrew".to_string(), "/data/games".to_string(), "/data/etaHEN/games".to_string()];
+     for m in &ext {
+         all.push(format!("{m}/homebrew"));
++        all.push(format!("{m}/games"));
+         all.push(format!("{m}/etaHEN/games"));
+     }
+     all.extend(usb.iter().map(|m| format!("{m}/homebrew")));
++    all.extend(usb.iter().map(|m| format!("{m}/games")));
+     all.extend(usb.iter().map(|m| format!("{m}/etaHEN/games")));
+     all.extend(usb.iter().cloned());
+     all.extend(ext.iter().cloned());
+diff --git a/src/ui.html b/src/ui.html
+index b44ed8b..5a01053 100644
+--- a/src/ui.html
++++ b/src/ui.html
+@@ -1747,7 +1747,7 @@ function renderActivityChart(){var cpu=cpuReading(state),now=Date.now(),windowMs
+ function openUtility(kind){utilityOpener=document.activeElement;$('utility-dialog').dataset.kind=kind;$('utility-dialog').hidden=false;setText($('utility-title'),kind==='about'?'About TITAN CORE':'Notifications');if(kind==='about')renderAboutBody();else renderAlertBody();syncInert();$('utility-close').focus();}
+ function closeUtility(){$('utility-dialog').hidden=true;syncInert();if(utilityOpener&&document.body.contains(utilityOpener))utilityOpener.focus();}
+ function renderAlertBody(){var box=$('utility-body');box.textContent='';var alerts=snapshotAlerts(state,monitorOnline);if(!alerts.length)box.appendChild(el('p',null,'No current alerts.'));alerts.slice(0,50).forEach(function(item){var row=el('div','alert-item');row.appendChild(el('strong',null,item.title,true));row.appendChild(el('p',null,item.detail,true));box.appendChild(row);});}
+-function renderAboutBody(){var box=$('utility-body');box.textContent='';[['Application','TITAN CORE '+(state&&state.version||'__VERSION__')],['Console address',location.origin],['Firmware',state&&state.services&&state.services.firmware||'—'],['Runtime','chmod v0.1 · AMPR0.4.0'],['Services','kstuff-lite1.11 · ShadowMountPlus1.7beta10']].forEach(function(v){var row=el('div','live-row');row.appendChild(el('span',null,v[0]));row.appendChild(el('strong',null,v[1],true));box.appendChild(row);});box.appendChild(el('p',null,'Real console data only. Unavailable sensors stay blank.'));var a=el('a',null,'View source and acknowledgments');a.href='https://github.com/devchmod/TITAN-CORE/blob/main/CREDITS.md';a.target='_blank';a.rel='noopener';box.appendChild(a);}
++function renderAboutBody(){var box=$('utility-body');box.textContent='';[['Application','TITAN CORE '+(state&&state.version||'__VERSION__')],['Console address',location.origin],['Firmware',state&&state.services&&state.services.firmware||'—'],['Runtime','AMPR 0.4.1-3ced5c0 + kraken-mount v0.2.1 · Mod v2.2'],['Services','kstuff-lite 1.11 (OnionHEN/etaHEN guard) · ShadowMountPlus 1.7beta12']].forEach(function(v){var row=el('div','live-row');row.appendChild(el('span',null,v[0]));row.appendChild(el('strong',null,v[1],true));box.appendChild(row);});box.appendChild(el('p',null,'Real console data only. Unavailable sensors stay blank.'));var a=el('a',null,'View source and acknowledgments');a.href='https://github.com/devchmod/TITAN-CORE/blob/main/CREDITS.md';a.target='_blank';a.rel='noopener';box.appendChild(a);}
+ function healthChecks(v,online){var checks=[{name:'Console connection',result:online?'passed':'failed'}];if(!online)return checks;var services=v.services||{},disk=internalStorage(v);checks.push({name:'kstuff service',result:services.kstuff_ready?'passed':'warning'},{name:'ShadowMount service',result:services.shadowmount_ready?'passed':'warning'},{name:'Runtime available',result:v.cache&&v.cache.ampr_present?'passed':'warning'},{name:'Internal storage',result:disk&&!(v.cache&&v.cache.low_space)?'passed':'warning'},{name:'Library errors',result:(v.games||[]).some(function(g){return g.status==='error';})?'warning':'passed'});return checks;}
+ async function runDiagnostics(){var button=$('run-diagnostics');button.disabled=true;setText($('diagnostic-result'),'Loading...');try{var r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);var fresh=await r.json();if(!fresh||!Array.isArray(fresh.games)||!Array.isArray(fresh.drives))throw Error('Invalid console snapshot');var checks=healthChecks(fresh,true),result=checks.some(function(c){return c.result==='warning';})?'warning':'passed';saveDiagnostics({time:Date.now(),result:result,checks:checks});setText($('diagnostic-result'),result==='passed'?'Reported checks passed.':'Some reported checks need attention.');}catch(e){saveDiagnostics({time:Date.now(),result:'failed',checks:healthChecks(null,false),error:e.message});setText($('diagnostic-result'),t('Diagnostics unavailable: {error}',{error:e.message}));}finally{button.disabled=false;}}
+ function saveDiagnostics(record){diagHistory.push(record);diagHistory=diagHistory.slice(-20);try{localStorage.setItem('titan-diagnostics-history',JSON.stringify(diagHistory));}catch(e){setText($('report-message'),'Browser storage is unavailable; history is temporary.');}renderDiagnosticHistory();}
+diff --git a/src/web.rs b/src/web.rs
+index 5b13a84..22d2ef1 100644
+--- a/src/web.rs
++++ b/src/web.rs
+@@ -356,6 +356,23 @@ fn route(state: &State, head: &str, body: &[u8], loopback: bool) -> Reply {
+         }
+         ("GET", p) if p.starts_with("/icon/") => image(state, &p["/icon/".len()..], &["icon0.png"]),
+         ("GET", p) if p.starts_with("/pic/") => image(state, &p["/pic/".len()..], &["pic0.png", "pic1.png"]),
++        ("GET", "/api/debug/memory") => reply(200, "application/json", crate::debug_bundle::memory_snapshot_json().to_string()),
++        ("GET", "/api/debug/mounts") => reply(200, "application/json", crate::debug_bundle::mounts_snapshot_json().to_string()),
++        ("GET", "/api/debug/error-dump") => reply(200, "application/json", crate::debug_bundle::error_dump_json().to_string()),
++        ("GET", "/api/debug/formats") => {
++            let games: Vec<serde_json::Value> = state.games.lock().unwrap().iter().map(|g| serde_json::json!({"path": g.src.path})).collect();
++            let imgs = state.image_files.lock().unwrap().clone();
++            reply(200, "application/json", crate::dump_formats::summarize_inventory(&games, &imgs).to_string())
++        }
++        ("POST", "/api/debug/dump-bundle") | ("GET", "/api/debug/bundle") => {
++            let games: Vec<serde_json::Value> = state.games.lock().unwrap().iter().map(|g| serde_json::json!({"path": g.src.path})).collect();
++            let imgs = state.image_files.lock().unwrap().clone();
++            let summary = crate::dump_formats::summarize_inventory(&games, &imgs);
++            match crate::debug_bundle::write_bundle("titan-debug-latest.json", summary) {
++                Ok(v) => reply(200, "application/json", v.to_string()),
++                Err(e) => reply(500, "text/plain", e),
++            }
++        }
+         // Debug: read a file under /data (logs, klog.txt). Read-only.
+         ("GET", p) if p.starts_with("/file/data/") && state.settings.lock().unwrap().debug => {
+             dbg_file(&p["/file".len()..], query)
+diff --git a/vendor/ampr-emu-ng/SHA256SUMS b/vendor/ampr-emu-ng/SHA256SUMS
+index ad08249..4f95860 100644
+--- a/vendor/ampr-emu-ng/SHA256SUMS
++++ b/vendor/ampr-emu-ng/SHA256SUMS
+@@ -1,3 +1,3 @@
+-8e087965c3f16d24611023d365bb08b0ae409a46ecb01d8b9a11333b8318850f  libSceAmpr.sprx
++3dc644b8b514d348bf90eaa08e7fe534231b4a0b49c3b8be616b4d2760936477  libSceAmpr.sprx
+ 8320eb65c16565f42031b9d88b15a447039f0fd7e5694faf5f1cb84cafdba218  libSceAmpr-upstream-v0.4.0.sprx
+ 1ca2c491650488cacac568341133a3d3c825312781f9f195d60db337a441a4db  play-no-limit-source.zip
+diff --git a/vendor/ampr-emu-ng/VERSION b/vendor/ampr-emu-ng/VERSION
+index 70a35ca..e43efc5 100644
+--- a/vendor/ampr-emu-ng/VERSION
++++ b/vendor/ampr-emu-ng/VERSION
+@@ -1 +1 @@
+-chmod v0.1
+\ No newline at end of file
++0.4.1-3ced5c0
+diff --git a/vendor/unified/SHA256SUMS b/vendor/unified/SHA256SUMS
+index d13da1a..cfe0c71 100644
+--- a/vendor/unified/SHA256SUMS
++++ b/vendor/unified/SHA256SUMS
+@@ -1,2 +1,2 @@
+ ab9a6cb4d3b1daf139d4d646e402b1cf569071acd64599c936d7a3a6164dc779  kstuff-lite-v1.11.elf
+-8c6798232ae2a8fbcd209ab97fc4f8d4d47cf23b7eecfaa6349c0bfeb8e4a3d3  shadowmountplus-1.7beta10.elf
++8755172ec9bef1bff5453ea75606e0caf7c41b5963f94f5a1087e7e8c6d9b1bd  shadowmountplus-1.7beta12.elf

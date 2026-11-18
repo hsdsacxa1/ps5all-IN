@@ -1,0 +1,121 @@
+diff --git a/src/launch.rs b/src/launch.rs
+index 001e88d..d8d1def 100644
+--- a/src/launch.rs
++++ b/src/launch.rs
+@@ -712,9 +712,10 @@ impl Watcher {
+                                 tlog!("{tid} common/lib has our layer {}; mounting the rest", s.srcs[i]);
+                                 s.mount(i + 1, "sandbox");
+                             }
+-                            // SMP track_sandbox_layer: another unionfs owns it; leave it alone.
++                            // KrakenShadow-Mix: stack our ampr-emu-ng fakelib unionfs on top of ShadowMountPlus!
+                             None if t.fstype == "unionfs" => {
+-                                tlog!("{tid} common/lib occupied by unionfs from {}; not mounting", t.from)
++                                tlog!("{tid} ShadowMountPlus unionfs detected ({}); stacking Kraken fakelib + /app0/kraken on top!", t.from);
++                                s.mount(0, "sandbox-stacked-over-smp");
+                             }
+                             None => {
+                                 tlog!("{tid} common/lib ready after {waited} ms ({} from {}): {lib}", t.fstype, t.from);
+@@ -808,7 +809,8 @@ impl Watcher {
+             }
+             Some(lib) => match top_mount(&lib) {
+                 Ok(t) if t.on == lib && t.fstype == "unionfs" => {
+-                    tlog!("{tid} common/lib occupied by unionfs from {}; not mounting", t.from)
++                    tlog!("{tid} exec fallback: stacking Kraken fakelib + /app0/kraken over ShadowMountPlus ({})", t.from);
++                    s.mount(0, "exec-stacked-over-smp");
+                 }
+                 _ => {
+                     s.mount(0, "exec fallback");
+diff --git a/src/main.rs b/src/main.rs
+index 7c56a90..fe26e42 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -325,10 +325,12 @@ fn wait_ready(state: &State) {
+     let s = state.settings.lock().unwrap().clone();
+     let mut waiting: Option<&str> = None;
+     loop {
++        // KrakenShadow-Mix (801b98e): allow shadowmountplus.elf to run simultaneously via Stacked UnionFS!
++        if launch::find_pid(SMP_PROCESS).is_some() && waiting.is_none() {
++            log!("ShadowMountPlus ({SMP_PROCESS}) detected: KrakenShadow-Mix Stacked UnionFS coexistence active");
++        }
+         let why = if !sys::kstuff_loaded() {
+             Some("kstuff")
+-        } else if launch::find_pid(SMP_PROCESS).is_some() {
+-            Some("shadowmount")
+         } else {
+             None
+         };
+diff --git a/src/scan.rs b/src/scan.rs
+index 13f2673..ab2d865 100644
+--- a/src/scan.rs
++++ b/src/scan.rs
+@@ -163,8 +163,41 @@ pub fn scan(roots: &[String], backports: bool) -> ScanResult {
+                 Err(e) => scan_error(&mut result, root.to_path_buf(), e),
+             }
+         }
+-        paths.sort();
+-        for path in paths {
++        // KrakenShadow-Mix: expand 1 level of subdirectories for nested .pkg files and detect .ffpkg/.ffpfsc for SMP bridge
++        let mut expanded = Vec::new();
++        let mut has_smp_archive = false;
++        for p in paths {
++            if let Ok(md) = fs::metadata(&p) {
++                if md.is_file() && p.extension().is_some_and(|e| e.eq_ignore_ascii_case("ffpkg") || e.eq_ignore_ascii_case("ffpfsc")) {
++                    has_smp_archive = true;
++                } else if md.is_dir() && !p.join("eboot.bin").is_file() && p.file_name().is_some_and(|n| n != "backports" && n != "sce_sys") {
++                    if let Ok(sub) = fs::read_dir(&p) {
++                        for sub_entry in sub.flatten() {
++                            let sp = sub_entry.path();
++                            if !sub_entry.file_name().to_string_lossy().starts_with(".") {
++                                if sp.extension().is_some_and(|e| e.eq_ignore_ascii_case("pkg")) || (sp.is_dir() && sp.join("eboot.bin").is_file()) {
++                                    expanded.push(sp);
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++            expanded.push(p);
++        }
++        if has_smp_archive {
++            if let Ok(mut s) = std::net::TcpStream::connect_timeout(
++                &std::net::SocketAddr::from(([127, 0, 0, 1], 10101)),
++                std::time::Duration::from_millis(150),
++            ) {
++                let _ = std::io::Write::write_all(
++                    &mut s,
++                    b"POST /api/v1/scan HTTP/1.1\r\nHost: 127.0.0.1:10101\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
++                );
++            }
++        }
++        expanded.sort();
++        for path in expanded {
+             let metadata = match fs::metadata(&path) {
+                 Ok(metadata) => metadata,
+                 Err(e) => {
+diff --git a/src/storage.rs b/src/storage.rs
+index be0878d..81df180 100644
+--- a/src/storage.rs
++++ b/src/storage.rs
+@@ -67,13 +67,21 @@ pub fn default_scan_roots() -> Vec<String> {
+     let present = mounted_aliases();
+     let ext: Vec<String> = (0..EXT).map(|i| format!("/mnt/ext{i}")).collect();
+     let usb: Vec<String> = (0..USB).map(|i| format!("/mnt/usb{i}")).collect();
+-    let mut all = vec!["/data/homebrew".to_string(), "/data/etaHEN/games".to_string()];
++    let mut all = vec![
++        "/data/homebrew".to_string(),
++        "/data/etaHEN/games".to_string(),
++        "/data/games".to_string(),
++    ];
+     for m in &ext {
+         all.push(format!("{m}/homebrew"));
+         all.push(format!("{m}/etaHEN/games"));
++        all.push(format!("{m}/games"));
++        all.push(format!("{m}/pkgs"));
+     }
+     all.extend(usb.iter().map(|m| format!("{m}/homebrew")));
+     all.extend(usb.iter().map(|m| format!("{m}/etaHEN/games")));
++    all.extend(usb.iter().map(|m| format!("{m}/games")));
++    all.extend(usb.iter().map(|m| format!("{m}/pkgs")));
+     all.extend(usb.iter().cloned());
+     all.extend(ext.iter().cloned());
+     all.retain(|r| r.starts_with("/data/") || present.iter().any(|m| r == m || r.starts_with(&format!("{m}/"))));
