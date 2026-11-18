@@ -1,4 +1,4 @@
-import { DumpModCatalogItem, DumpModCategoryId } from '../types/dumpMods';
+import type { DumpModCatalogItem, DumpModCategoryId } from '../types/dumpMods.ts';
 
 export const DUMP_MOD_CATEGORIES: ReadonlyArray<{
   id: DumpModCategoryId;

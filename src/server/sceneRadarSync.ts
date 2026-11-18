@@ -1,9 +1,9 @@
-import {
+import type {
   LiveSceneRadarSyncResult,
   LiveSceneSyncDiscoveredRepo,
   LiveSceneSyncReleaseUpdate,
-} from '../types/sceneRadar';
-import { parseGithubAtomEntries } from '../validators/sceneRadarFilter';
+} from '../types/sceneRadar.ts';
+import { parseGithubAtomEntries } from '../validators/sceneRadarFilter.ts';
 
 const DEFAULT_WATCHLIST_REPOS = [
   'phantomptr/ps5upload',

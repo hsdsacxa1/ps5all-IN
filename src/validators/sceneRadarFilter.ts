@@ -1,9 +1,9 @@
-import {
+import type {
   LiveSceneRadarSyncResult,
   RepoAuditCategory,
   RepoAuditEntry,
   SceneNewsSeverity,
-} from '../types/sceneRadar';
+} from '../types/sceneRadar.ts';
 
 export interface RepoCategoryMeta {
   readonly id: RepoAuditCategory;

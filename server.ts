@@ -2,16 +2,15 @@ import express, { type Request, type Response } from 'express';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createServer as createViteServer } from 'vite';
 import {
   BUILT_ELF_ARTIFACTS,
   resolveBuiltElfArtifact,
   resolveDownloadableBuildFile,
-} from './src/bridge/builtElfCatalog';
-import { fetchLiveSceneRadarSync } from './src/server/sceneRadarSync';
-import { DUMP_MODS_CATALOG } from './src/data/dumpModsCatalogData';
-import { DUMP_SYMPTOMS_DIAGNOSIS } from './src/data/dumpSymptomsData';
-import { DUMP_MOD_STRATEGY_LIST } from './src/mods/dumpModRegistry';
+} from './src/bridge/builtElfCatalog.ts';
+import { fetchLiveSceneRadarSync } from './src/server/sceneRadarSync.ts';
+import { DUMP_MODS_CATALOG } from './src/data/dumpModsCatalogData.ts';
+import { DUMP_SYMPTOMS_DIAGNOSIS } from './src/data/dumpSymptomsData.ts';
+import { DUMP_MOD_STRATEGY_LIST } from './src/mods/dumpModRegistry.ts';
 
 const PORT = Number(process.env.PORT) || 3000;
 const REQUEST_TIMEOUT_MS = 15000;
@@ -713,6 +712,7 @@ async function startServer(): Promise<void> {
   app.use('/api/bridge', createBridgeRouter());
 
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',

@@ -1,4 +1,4 @@
-import { DumpSymptomDiagnosis } from '../types/dumpMods';
+import type { DumpSymptomDiagnosis } from '../types/dumpMods.ts';
 
 export const DUMP_SYMPTOMS_DIAGNOSIS: readonly DumpSymptomDiagnosis[] = [
   {

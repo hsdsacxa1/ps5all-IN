@@ -1,8 +1,8 @@
-import {
+import type {
   DumpModGeneratedArtifact,
   DumpModRecipeConfig,
   DumpModStrategyId,
-} from '../../types/dumpMods';
+} from '../../types/dumpMods.ts';
 
 export interface DumpModStrategyHandler {
   id: DumpModStrategyId;

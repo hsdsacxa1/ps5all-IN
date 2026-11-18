@@ -1,4 +1,4 @@
-import { DumpModStrategyHandler } from './types';
+import type { DumpModStrategyHandler } from './types.ts';
 
 export const xmlPerformancePatchStrategy: DumpModStrategyHandler = {
   id: 'xml-60fps-resolution',

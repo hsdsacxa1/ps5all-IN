@@ -1,4 +1,4 @@
-import { DumpModStrategyHandler } from './types';
+import type { DumpModStrategyHandler } from './types.ts';
 
 export const fakelibBackportStrategy: DumpModStrategyHandler = {
   id: 'fakelib-backport',

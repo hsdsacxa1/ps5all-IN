@@ -1,4 +1,4 @@
-import {
+import type {
   DumpModAuditFinding,
   DumpModCatalogItem,
   DumpModCategoryId,
@@ -7,14 +7,14 @@ import {
   DumpModStrategyId,
   DumpSymptomDiagnosis,
   DumpSymptomId,
-} from '../types/dumpMods';
-import { DUMP_SYMPTOMS_DIAGNOSIS } from '../data/dumpSymptomsData';
-import { bootAmprNpFixStrategy } from './strategies/bootAmprNpFixStrategy';
-import { dlcEntitlementUnlockStrategy } from './strategies/dlcEntitlementUnlockStrategy';
-import { fakelibBackportStrategy } from './strategies/fakelibBackportStrategy';
-import { DumpModStrategyHandler } from './strategies/types';
-import { unionFsContentOverlayStrategy } from './strategies/unionFsContentOverlayStrategy';
-import { xmlPerformancePatchStrategy } from './strategies/xmlPerformancePatchStrategy';
+} from '../types/dumpMods.ts';
+import { DUMP_SYMPTOMS_DIAGNOSIS } from '../data/dumpSymptomsData.ts';
+import { bootAmprNpFixStrategy } from './strategies/bootAmprNpFixStrategy.ts';
+import { dlcEntitlementUnlockStrategy } from './strategies/dlcEntitlementUnlockStrategy.ts';
+import { fakelibBackportStrategy } from './strategies/fakelibBackportStrategy.ts';
+import type { DumpModStrategyHandler } from './strategies/types.ts';
+import { unionFsContentOverlayStrategy } from './strategies/unionFsContentOverlayStrategy.ts';
+import { xmlPerformancePatchStrategy } from './strategies/xmlPerformancePatchStrategy.ts';
 
 export const DUMP_MOD_STRATEGY_REGISTRY: Record<
   DumpModStrategyId,
