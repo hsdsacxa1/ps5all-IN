@@ -11,6 +11,7 @@ import { fetchLiveSceneRadarSync } from './src/server/sceneRadarSync.ts';
 import { DUMP_MODS_CATALOG } from './src/data/dumpModsCatalogData.ts';
 import { DUMP_SYMPTOMS_DIAGNOSIS } from './src/data/dumpSymptomsData.ts';
 import { DUMP_MOD_STRATEGY_LIST } from './src/mods/dumpModRegistry.ts';
+import { createGithubReleaseRouter } from './src/bridge/githubReleaseRouter.ts';
 
 const PORT = Number(process.env.PORT) || 3000;
 const REQUEST_TIMEOUT_MS = 15000;
@@ -710,6 +711,7 @@ async function startServer(): Promise<void> {
   app.use(express.json({ limit: '4mb' }));
 
   app.use('/api/bridge', createBridgeRouter());
+  app.use('/api/github', createGithubReleaseRouter());
 
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');

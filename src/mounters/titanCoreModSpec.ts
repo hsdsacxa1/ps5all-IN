@@ -1,5 +1,7 @@
 export type TitanCorePatchCategory =
   | 'all'
+  | 'gdrive-telemetry'
+  | 'grimmtroll-fix7-port'
   | 'debug-memory'
   | 'dump-formats'
   | 'upstream-v1'
@@ -25,30 +27,42 @@ export interface TitanCoreModSummary {
   bundledAmpr: string;
   elfArtifact: string;
   patchArtifact: string;
+  preservedV22ElfArtifact: string;
+  preservedV22PatchArtifact: string;
+  preservedV22SourceArtifact: string;
   legacyPatchArtifact: string;
   elfReportArtifact: string;
   rustTestsPassed: string;
 }
 
 export const TITAN_CORE_MOD_SUMMARY: TitanCoreModSummary = {
-  versionLabel: 'TITAN-CORE v1.0.2-mod-20261118 (Compiled Mod v2.2 ELF)',
-  upstreamBase: 'devchmod/TITAN-CORE v1.0.0 (2e1f186) + Mod v2.2 (Memory/Error Debug Bundle + All 7 Dump Formats)',
-  bundledServices: 'ShadowMountPlus 1.7beta12 + kstuff-lite 1.11 (OnionHEN/etaHEN guard)',
-  bundledAmpr: 'ampr-emu-ng beta 3ced5c0 (256 MiB PRX, 204-208 MiB cache, save-mount guard)',
-  elfArtifact: 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf',
-  patchArtifact: 'TITAN-CORE-v1.0-mod-20261118-v2.2.patch',
+  versionLabel: 'TITAN-CORE v1.0.3-mod-20261118 (Mod v2.3 + Preserved Mod v2.2)',
+  upstreamBase:
+    'devchmod/TITAN-CORE v1.0.0 (2e1f186) + Mod v2.3 (Google Drive Error Telemetry + grimmtroll/TITAN FIX7 Port + All 7 Formats)',
+  bundledServices:
+    'ShadowMountPlus 1.7beta12-titan-isolated4 + PlayGo Stub 0.6 + kstuff-lite 1.11 (OnionHEN/etaHEN guard)',
+  bundledAmpr:
+    'ampr-emu-ng beta 3ced5c0 (256 MiB PRX, 204-208 MiB cache, save-mount guard)',
+  elfArtifact: 'TITAN-CORE-v1.0-mod-20261118-v2.3.elf',
+  patchArtifact: 'TITAN-CORE-v1.0-mod-20261118-v2.3.patch',
+  preservedV22ElfArtifact: 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf',
+  preservedV22PatchArtifact: 'TITAN-CORE-v1.0-mod-20261118-v2.2.patch',
+  preservedV22SourceArtifact: 'TITAN-CORE-v1.0.2-mod-20261118-src.tar.gz',
   legacyPatchArtifact: 'TITAN-CORE-v1.0-mod-20261116.patch',
-  elfReportArtifact: 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf.txt',
-  rustTestsPassed: '21/21 Rust tests + FreeBSD 11 -Dwarnings + 2-Stage LTO ELF64 (17,254,680 B)',
+  elfReportArtifact: 'TITAN-CORE-v1.0-mod-20261118-v2.3.elf.txt',
+  rustTestsPassed:
+    '26/26 Rust tests + FreeBSD 11 -Dwarnings + 2-Stage LTO ELF64 (Mod v2.3 + Preserved Mod v2.2)',
 };
 
 export const TITAN_CORE_CATEGORY_TABS: ReadonlyArray<{
   id: TitanCorePatchCategory;
   label: string;
 }> = [
-  { id: 'all', label: 'Все улучшения (13)' },
-  { id: 'debug-memory', label: 'Дебаг, Память и Ошибки' },
-  { id: 'dump-formats', label: 'Все форматы дампов' },
+  { id: 'all', label: 'Все улучшения (18)' },
+  { id: 'gdrive-telemetry', label: 'NEW v2.3 · Google Drive Репорты' },
+  { id: 'grimmtroll-fix7-port', label: 'NEW v2.3 · Порт grimmtroll/TITAN FIX7' },
+  { id: 'debug-memory', label: 'Mod v2.2 · Дебаг, Память и Ошибки' },
+  { id: 'dump-formats', label: 'Mod v2.2 · Все 7 форматов' },
   { id: 'upstream-v1', label: 'База v1.0.0 + AMPR 3ced5c0' },
   { id: 'hen-guard', label: 'Ядро и OnionHEN' },
   { id: 'containers', label: 'Контейнеры и Доступ' },
@@ -57,11 +71,104 @@ export const TITAN_CORE_CATEGORY_TABS: ReadonlyArray<{
 
 export const TITAN_CORE_MOD_PATCHES: readonly TitanCoreModPatch[] = [
   {
+    id: 'gdrive-crash-telemetry-uploader',
+    category: 'gdrive-telemetry',
+    categoryLabel: 'NEW Mod v2.3 · Google Drive Telemetry',
+    targetFile: 'src/debug_bundle.rs + src/config.rs + src/web.rs',
+    title: 'NEW (Mod v2.3): Авто-выгрузка репортов с ошибками на Google Диск (OAuth Drive API + Apps Script Webhook)',
+    sceneBasis: 'Автономный сбор крэш-репортов и errno с консолей PS5 13.60 (включая оффлайн-DNS 127.0.0.2 через Browser Relay)',
+    summary:
+      'Формирует санитизированный JSON-репорт (удаляет локальные IPv4-адреса, включает KERN_PROC_VMMAP, 256-slot errno ring, статус unionfs и активный Title ID) и автоматически загружает его на ваш Google Диск через OAuth 2.0 (drive.file) или бессерверный вебхук Google Apps Script.',
+    snippet: `// src/debug_bundle.rs -> build_drive_telemetry_payload()
+pub fn build_drive_telemetry_payload(formats: Value, playgo_enabled: bool) -> Value {
+    json!({
+        "reportId": format!("titan-report-{}", now_ms()),
+        "forkVersion": "1.0.3-mod-v2.3",
+        "amprVersion": "0.4.1-3ced5c0",
+        "smpVariant": "1.7beta12-titan-isolated4",
+        "playGoStubActive": playgo_enabled,
+        "memory": memory_snapshot_json(),
+        "mounts": mounts_snapshot_json(),
+        "errors": error_dump_json(),
+    })
+}`,
+  },
+  {
+    id: 'grimmtroll-playgo-stub-per-game',
+    category: 'grimmtroll-fix7-port',
+    categoryLabel: 'NEW Mod v2.3 · PlayGo Stub 0.6',
+    targetFile: 'vendor/playgo/libScePlayGo.sprx + src/config.rs + src/cache.rs',
+    title: 'NEW (Mod v2.3): Встроенный drakmor PlayGo Stub 0.6 (libScePlayGo.sprx) + чекбоксы игр (playgo_exclude)',
+    sceneBasis: 'Порт из grimmtroll2285-dot/TITAN (FIX6 / FIX7 v1.0.5) + drakmor PlayGo Stub 0.6',
+    summary:
+      'Встраивает libScePlayGo.sprx (18,150 B, SHA-256 f5fdb0ed...) напрямую в ELF и позволяет включать/исключать инъекцию PlayGo Stub поштучно для выбранных Title ID (массив playgo_exclude в config.toml) без ручного копирования в fakelib.',
+    snippet: `// vendor/playgo/libScePlayGo.sprx (18,150 bytes, SHA-256: f5fdb0ed6cc7413e6dcac79a62e0efd8cfbae04cca0bf932e7a741aed850d213)
+// config.toml:
+// playgo_stub = true
+// playgo_exclude = ["PPSA01341"]`,
+  },
+  {
+    id: 'grimmtroll-y2jb-3region-guard',
+    category: 'grimmtroll-fix7-port',
+    categoryLabel: 'NEW Mod v2.3 · Y2JB 3-Region Guard',
+    targetFile: 'src/main.rs + src/scan.rs + src/register.rs',
+    title: 'NEW (Mod v2.3): Защита всех 3 региональных идентификаторов Y2JB YouTube (PPSA01650, PPSA01651, PPSA01652)',
+    sceneBasis: 'Порт из grimmtroll2285-dot/TITAN (FIX3 / FIX7) + Gezine/Y2JB v1.1.0',
+    summary:
+      'Исключает US (PPSA01650), EU (PPSA01651) и JP/Asia (PPSA01652) версии приложения YouTube из подготовки кэша, регистрации, наложения fakelib-оверлеев и блокировок обновлятора, гарантируя сохранность точки входа Y2JB.',
+    snippet: `pub const Y2JB_PROTECTED_TIDS: [&str; 3] = ["PPSA01650", "PPSA01651", "PPSA01652"];
+pub fn is_protected_y2jb_tid(tid: &str) -> bool {
+    Y2JB_PROTECTED_TIDS.iter().any(|p| p.eq_ignore_ascii_case(tid.trim()))
+}`,
+  },
+  {
+    id: 'grimmtroll-smp-isolated4-ownership',
+    category: 'grimmtroll-fix7-port',
+    categoryLabel: 'NEW Mod v2.3 · SMP isolated4',
+    targetFile: 'src/stack.rs + vendor/unified/shadowmountplus-1.7beta12-titan-isolated4.elf',
+    title: 'NEW (Mod v2.3): ShadowMountPlus 1.7beta12-titan-isolated4 (отключение фонового AppUnInstall и защита mount.lnk)',
+    sceneBasis: 'Порт из grimmtroll2285-dot/TITAN (FIX3 / FIX5 / FIX7)',
+    summary:
+      'Отключает два фоновых пути автоматического вызова AppUnInstall во встроенном ShadowMountPlus, заменяет безусловный общий вызов AppInstallAll на адресную регистрацию одного Title ID и проверяет владение существующим mount.lnk.',
+    snippet: `// ShadowMountPlus 1.7beta12-titan-isolated4 policy:
+// 1. Background auto-AppUnInstall disabled (manual API delete preserved)
+// 2. Per-boot native ownership claim before registration & base mount
+// 3. Foreign mount.lnk blocks hijack without deleting user symlinks`,
+  },
+  {
+    id: 'grimmtroll-soft-unmount-no-mnt-force',
+    category: 'grimmtroll-fix7-port',
+    categoryLabel: 'NEW Mod v2.3 · Soft Unmount',
+    targetFile: 'src/launch.rs',
+    title: 'NEW (Mod v2.3): Мягкая очистка слоёв без MNT_FORCE по тайм-ауту и опрос пропущенных NOTE_EXIT',
+    sceneBasis: 'Порт из grimmtroll2285-dot/TITAN (FIX3 / FIX7)',
+    summary:
+      'При завершении процесса игры TITAN снимает свои unionfs-слои без принудительного MNT_FORCE по тайм-ауту (занятые слои остаются на учёте для безопасных повторов), а при потере события NOTE_EXIT периодический опрос PID ставит штатную очистку в очередь.',
+    snippet: `// src/launch.rs: never MNT_FORCE on busy sandbox layer
+Some(code) => {
+    let forced = Some(code); // keep tracked for safe retry without MNT_FORCE kernel hang
+    tlog!("{} cleanup deferred errno={code}; layer kept tracked", s.tid);
+}`,
+  },
+  {
+    id: 'grimmtroll-backports-catalog-schema1',
+    category: 'grimmtroll-fix7-port',
+    categoryLabel: 'NEW Mod v2.3 · Backports Schema v1',
+    targetFile: 'src/backports.rs + src/web.rs',
+    title: 'NEW (Mod v2.3): Менеджер каталогов нативных бэкпортов (Schema v1, точная сверка 01.008.000 == 1.8.0, откат)',
+    sceneBasis: 'Порт из grimmtroll2285-dot/TITAN (FIX7 v1.0.5 BACKPORTS.md)',
+    summary:
+      'Поддерживает подключение JSON-каталогов бэкпортов Schema v1 с числовой сверкой 3-частной версии игры, диапазона FW, модели консоли (any/base/pro), SHA-256 каждого файла, защитой libSceAmpr.sprx/libkernel.sprx и иммутабельными паками /data/titan-core/backports/packs/<sha256>/.',
+    snippet: `// Allowed paths in Schema v1 pack:
+// eboot.bin, sce_sys/param.json, fakelib/*.sprx, fakelib2/*.sprx, sce_module/*.sprx
+// Protected runtime modules refused: libSceAmpr.sprx, libkernel.sprx`,
+  },
+  {
     id: 'debug-memory-vmmap-collector',
     category: 'debug-memory',
-    categoryLabel: 'NEW Mod v2.2 · Память и VM',
+    categoryLabel: 'Mod v2.2 · Память и VM',
     targetFile: 'src/debug_bundle.rs + src/web.rs',
-    title: 'NEW (Mod v2.2): Дамп памяти процесса (rusage + KERN_PROC_VMMAP + AMPR 256 MiB map)',
+    title: 'Mod v2.2: Дамп памяти процесса (rusage + KERN_PROC_VMMAP + AMPR 256 MiB map)',
     sceneBasis: 'Аудит памяти PS5 13.60 (Flexible 448 MiB / ShellUI 1.6 GiB) + FreeBSD sysctl ABI',
     summary:
       'Добавляет GET /api/debug/memory и GET /api/debug/mounts: снимает RSS, minor/major page faults, context switches, карту mmap/PRX-регионов (подтверждая загрузку libSceAmpr.sprx), свободный объём /data и проверяет граф монтирований getmntinfo() на двойные коллизии unionfs common/lib.',
@@ -74,9 +181,9 @@ let mut mib = [libc::CTL_KERN, libc::KERN_PROC, 32 /* KERN_PROC_VMMAP */, pid];
   {
     id: 'debug-error-ring-and-crash-bundle',
     category: 'debug-memory',
-    categoryLabel: 'NEW Mod v2.2 · Ошибки и Panic',
+    categoryLabel: 'Mod v2.2 · Ошибки и Panic',
     targetFile: 'src/debug_bundle.rs + src/main.rs + src/web.rs',
-    title: 'NEW (Mod v2.2): Кольцевой буфер 256 ошибок (errno) + авто-дамп при панике и экспорт бандла',
+    title: 'Mod v2.2: Кольцевой буфер 256 ошибок (errno) + авто-дамп при панике и экспорт бандла',
     sceneBasis: 'Постмортем-форензика сбоев без потери контекста при ротации titan-core.log',
     summary:
       'Регистрирует последние 256 ошибок с монотонным временем, Title ID и errno. При panic! записывает /data/titan-core/debug/last-crash-bundle.json. Эндпоинты GET /api/debug/error-dump и POST /api/debug/dump-bundle формируют единый JSON-бандл (память + монтирования + ошибки + форматы).',
@@ -90,9 +197,9 @@ let mut mib = [libc::CTL_KERN, libc::KERN_PROC, 32 /* KERN_PROC_VMMAP */, pid];
   {
     id: 'all-7-dump-formats-registry',
     category: 'dump-formats',
-    categoryLabel: 'NEW Mod v2.2 · Все форматы',
+    categoryLabel: 'Mod v2.2 · Все форматы',
     targetFile: 'src/dump_formats.rs + src/library.rs + src/web.rs',
-    title: 'NEW (Mod v2.2): Интеграция всех 7 форматов дампов (folder, lz4, zstd, pkg, ffpkg, ffpfsc, exfat)',
+    title: 'Mod v2.2: Интеграция всех 7 форматов дампов (folder, lz4, zstd, pkg, ffpkg, ffpfsc, exfat)',
     sceneBasis: 'Единый инвентарь под TITAN-CORE, ShadowMountPlus 1.7b12, Kraken Mount v0.2.1 и ps5upload v12.6.7',
     summary:
       'Заменяет узкий discover_exfat() на универсальный классификатор dump_formats::classify_path(): обнаруживает распакованные папки (Plain/LZ4/Zstd), FPKG (.pkg + split *_0.pkg), образы PFS (.ffpkg/.ffpfsc), сжатые архивы (.zst/.zstd/.lz4) и образы (.exfat/.img). Доступно через GET /api/debug/formats.',
@@ -106,9 +213,9 @@ pub enum DumpFormat {
   {
     id: 'external-pkg-and-split-detection',
     category: 'dump-formats',
-    categoryLabel: 'NEW Mod v2.2 · Внешние PKG',
+    categoryLabel: 'Mod v2.2 · Внешние PKG',
     targetFile: 'src/scan.rs + src/main.rs',
-    title: 'NEW (Mod v2.2): Авто-подхват .pkg на USB/M.2 (/homebrew, /games), детектор split *_0.pkg и fast fix_access',
+    title: 'Mod v2.2: Авто-подхват .pkg на USB/M.2 (/homebrew, /games), детектор split *_0.pkg и fast fix_access',
     sceneBasis: 'Сравнение upstream scan.rs vs ShadowMountPlus / Kraken Mount + фикс ремаунта при реплаге USB',
     summary:
       'Снимает жёсткий пропуск .pkg в /mnt/usb*/homebrew и /mnt/ext*/games (при сохранении изоляции /mnt/downloading), предупреждает о несобранных split-частях (*_0.pkg) и вызывает cache::fix_access(src) также на быстром пути уже зарегистрированного кэша.',
@@ -121,12 +228,12 @@ if crate::storage::drive_of(&path) != "/data"
   {
     id: 'fast-path-remount-and-ampr-cleanup',
     category: 'dump-formats',
-    categoryLabel: 'NEW Mod v2.2 · Чистка кэша',
+    categoryLabel: 'Mod v2.2 · Чистка кэша',
     targetFile: 'src/main.rs (prepare_ampr)',
-    title: 'NEW (Mod v2.2): Удаление устаревшего /data/ampr_cache при старте и диагностика повреждённого индекса',
+    title: 'Mod v2.2: Удаление устаревшего /data/ampr_cache при старте и диагностика повреждённого индекса',
     sceneBasis: 'quer3q/ampr-emu-ng 3ced5c0 + ps5-dump-forge #62 реальный фикс в патче',
     summary:
-      'В отличие от прежнего черновика, Mod v2.2 реально добавляет очистку старого /data/ampr_cache в prepare_ampr() и функцию validate_existing_index() в src/cache.rs с записью ошибок в кольцевой дебаг-буфер.',
+      'Реально добавляет очистку старого /data/ampr_cache в prepare_ampr() и функцию validate_existing_index() в src/cache.rs с записью ошибок в кольцевой дебаг-буфер.',
     snippet: `if Path::new("/data/ampr_cache").exists() {
     let _ = std::fs::remove_dir_all("/data/ampr_cache");
 }`,
@@ -134,7 +241,7 @@ if crate::storage::drive_of(&path) != "/data"
   {
     id: 'ampr-emu-ng-3ced5c0-256mb',
     category: 'upstream-v1',
-    categoryLabel: 'Обновлено в v2.2 · AMPR PRX',
+    categoryLabel: 'AMPR PRX 256 MiB',
     targetFile: 'vendor/ampr-emu-ng/libSceAmpr.sprx + SHA256SUMS + VERSION',
     title: 'ampr-emu-ng beta 3ced5c0 — 256 MiB PRX пул (204–208 MiB кэша) и защита сейвов',
     sceneBasis: 'quer3q/ampr-emu-ng beta 3ced5c0 (17.11.2026 19:02 UTC)',
@@ -147,7 +254,7 @@ if crate::storage::drive_of(&path) != "/data"
   {
     id: 'dump-forge-62-index-diag',
     category: 'scanner-config',
-    categoryLabel: 'Реализовано в v2.2 · Диагностика',
+    categoryLabel: 'Диагностика #62',
     targetFile: 'src/cache.rs (validate_existing_index)',
     title: 'Порт ps5-dump-forge #62: точная причина и размер (bytes) при повреждении ampr_emu.index',
     sceneBasis: 'quer3q/ps5-dump-forge PR #62 (17.11.2026 — 40928bf7)',
@@ -212,10 +319,10 @@ kstuff |= lower.starts_with(b"kstuff")
     category: 'scanner-config',
     categoryLabel: 'Сканер и Конфиг',
     targetFile: 'src/main.rs + src/config.rs',
-    title: 'Тихий пропуск retail-приложений (Y2JB PPSA01650) и алиас game_fakelib = "disabled"',
-    sceneBasis: 'Реальный лог /tmp/ps5_titan_core.log + Y2JB v1.1.0 (PPSA01650)',
+    title: 'Тихий пропуск retail-приложений (Y2JB PPSA01650/1/2) и алиас game_fakelib = "disabled"',
+    sceneBasis: 'Реальный лог /tmp/ps5_titan_core.log + Y2JB v1.1.0 (PPSA01650/1/2)',
     summary:
-      'Исключает спам ошибок от retail-подписанного YouTube (PPSA01650). В config.toml принимает "disabled" и "none" как синонимы "off".',
+      'Исключает спам ошибок от retail-подписанного YouTube (PPSA01650/1/2). В config.toml принимает "disabled" и "none" как синонимы "off".',
     snippet: `Err(error) if error.contains("a retail package") => {
     log!("Installed retail app {tid}: skipped (not an FPKG)");
 }
@@ -231,19 +338,6 @@ kstuff |= lower.starts_with(b"kstuff")
     summary:
       'Добавляет /data/games и <drive>/games в default_scan_roots() и обходит 1 уровень подпапок (depth 2) внутри scan_paths (кроме backports, titan-core и dot-каталогов).',
     snippet: `let mut all = vec!["/data/homebrew".into(), "/data/games".into(), "/data/etaHEN/games".into()];`,
-  },
-  {
-    id: 'upstream-v1-refresh-and-bundle',
-    category: 'upstream-v1',
-    categoryLabel: 'База v1.0.0 + Стек',
-    targetFile: 'src/updater.rs + ps5/update_http.c + vendor/*',
-    title: 'Ребейз на devchmod/TITAN-CORE v1.0.0 (BearSSL апдейтер) + SMP 1.7beta12',
-    sceneBasis: 'devchmod/TITAN-CORE v1.0.0 + drakmor/ShadowMountPlus 1.7beta12',
-    summary:
-      'Нативный HTTPS self-updater с SHA-256 проверкой через BearSSL и безопасным рестартом через elfldr:9021, встроенный ShadowMountPlus 1.7beta12 (v2 config) и kstuff-lite 1.11.',
-    snippet: `// vendor/unified/SHA256SUMS:
-//   ab9a6cb4... kstuff-lite-v1.11.elf
-//   8755172e... shadowmountplus-1.7beta12.elf`,
   },
 ];
 

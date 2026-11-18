@@ -62,11 +62,11 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
       {/* Zone 3: Primary actions */}
       <div className="flex items-center gap-2 shrink-0">
         <a
-          href="/api/bridge/download-build/TITAN-CORE-v1.0-mod-20261118-v2.2.elf"
-          download="TITAN-CORE-v1.0-mod-20261118-v2.2.elf"
+          href="/api/bridge/download-build/TITAN-CORE-v1.0.3-mod-20261118-src.tar.gz"
+          download="TITAN-CORE-v1.0.3-mod-20261118-src.tar.gz"
           className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-500 transition-colors whitespace-nowrap shrink-0"
         >
-          TITAN-CORE v2.2
+          TITAN-CORE v2.3
         </a>
         <button
           type="button"

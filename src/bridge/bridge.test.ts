@@ -106,9 +106,13 @@ test('endpoint catalog and path/body substitution populate console host', () => 
   assert.equal(formatBytesCompact(1024 * 1024 * 512), '512 MiB');
 });
 
-test('builtElfCatalog resolves allow-listed ELFs and downloadable build files safely', () => {
-  assert.equal(BUILT_ELF_ARTIFACTS.length, 4);
-  assert.equal(DEFAULT_BUILT_ELF_ID, 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf');
+test('builtElfCatalog resolves allow-listed ELFs and downloadable build files safely (Mod v2.3 + preserved Mod v2.2)', () => {
+  assert.equal(BUILT_ELF_ARTIFACTS.length, 5);
+  assert.equal(DEFAULT_BUILT_ELF_ID, 'TITAN-CORE-v1.0-mod-20261118-v2.3.elf');
+  assert.equal(
+    resolveBuiltElfArtifact('TITAN-CORE-v1.0-mod-20261118-v2.3.elf').id,
+    'TITAN-CORE-v1.0-mod-20261118-v2.3.elf'
+  );
   assert.equal(
     resolveBuiltElfArtifact('TITAN-CORE-v1.0-mod-20261118-v2.2.elf').id,
     'TITAN-CORE-v1.0-mod-20261118-v2.2.elf'
@@ -126,6 +130,14 @@ test('builtElfCatalog resolves allow-listed ELFs and downloadable build files sa
     DEFAULT_BUILT_ELF_ID
   );
   assert.equal(
+    resolveDownloadableBuildFile('TITAN-CORE-v1.0-mod-20261118-v2.3.elf'),
+    'TITAN-CORE-v1.0-mod-20261118-v2.3.elf'
+  );
+  assert.equal(
+    resolveDownloadableBuildFile('TITAN-CORE-v1.0-mod-20261118-v2.3.patch'),
+    'TITAN-CORE-v1.0-mod-20261118-v2.3.patch'
+  );
+  assert.equal(
     resolveDownloadableBuildFile('TITAN-CORE-v1.0-mod-20261118-v2.2.elf'),
     'TITAN-CORE-v1.0-mod-20261118-v2.2.elf'
   );
@@ -140,7 +152,7 @@ test('builtElfCatalog resolves allow-listed ELFs and downloadable build files sa
   assert.equal(resolveDownloadableBuildFile('SHA256SUMS'), 'SHA256SUMS');
   assert.equal(resolveDownloadableBuildFile('../server.ts'), null);
   assert.equal(
-    getBuildDownloadUrl('TITAN-CORE-v1.0-mod-20261118-v2.2.elf'),
-    '/api/bridge/download-build/TITAN-CORE-v1.0-mod-20261118-v2.2.elf'
+    getBuildDownloadUrl('TITAN-CORE-v1.0-mod-20261118-v2.3.elf'),
+    '/api/bridge/download-build/TITAN-CORE-v1.0-mod-20261118-v2.3.elf'
   );
 });

@@ -1,4 +1,5 @@
 export type BuiltElfArtifactId =
+  | 'TITAN-CORE-v1.0-mod-20261118-v2.3.elf'
   | 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf'
   | 'TITAN-CORE-v1.0-mod-20261116.elf'
   | 'kraken-shadow-mix.elf'
@@ -23,13 +24,23 @@ export interface BuiltElfDiskInfo extends BuiltElfSpec {
 
 export const BUILT_ELF_ARTIFACTS: readonly BuiltElfSpec[] = [
   {
-    id: 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf',
-    label: 'TITAN-CORE v1.0.2 Mod v2.2 (Compiled 18.11.2026 Unified PS5 13.60)',
-    shortTag: 'TITAN-CORE Mod v2.2',
+    id: 'TITAN-CORE-v1.0-mod-20261118-v2.3.elf',
+    label: 'TITAN-CORE v1.0.3 Mod v2.3 (Google Drive Telemetry + grimmtroll/TITAN FIX7 Port)',
+    shortTag: 'TITAN-CORE Mod v2.3',
     defaultPort: 9021,
     recommended: true,
     summary:
-      'Свежесобранный 2-stage LTO ELF64 (Rust 1.99.0 + PS5 SDK v0.43, 17.25 MB): дебаг-бандл памяти/ошибок (/api/debug/* + last-crash-bundle.json), все 7 форматов дампов, AMPR beta 3ced5c0 (256 MiB PRX), SMP 1.7beta12, kstuff-lite 1.11 с защитой OnionHEN/etaHEN, 16 CNT_FALLBACKS + protected.rs и ps5-dump-forge #62.',
+      'Объединённый релиз Mod v2.3 (17.48 MB): наш AMPR beta 3ced5c0 (256 MiB PRX) + дебаг-бандл памяти/ошибок с авто-выгрузкой на Google Диск + порт лучших функций grimmtroll2285-dot/TITAN (FIX7 v1.0.5): PlayGo Stub 0.6 с чекбоксами игр, защита 3 регионов Y2JB (PPSA01650/1/2), SMP 1.7beta12-isolated4 без фонового авто-сноса, мягкий unmount без MNT_FORCE и каталог бэкпортов Schema v1.',
+    patchFile: 'TITAN-CORE-v1.0-mod-20261118-v2.3.patch',
+    elfReportFile: 'TITAN-CORE-v1.0-mod-20261118-v2.3.elf.txt',
+  },
+  {
+    id: 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf',
+    label: 'TITAN-CORE v1.0.2 Mod v2.2 (Preserved 18.11.2026 Unified PS5 13.60)',
+    shortTag: 'TITAN-CORE Mod v2.2',
+    defaultPort: 9021,
+    summary:
+      'Сохранённая сборка 2-stage LTO ELF64 Mod v2.2 (17.25 MB): дебаг-бандл памяти/ошибок (/api/debug/* + last-crash-bundle.json), все 7 форматов дампов, AMPR beta 3ced5c0 (256 MiB PRX), SMP 1.7beta12, kstuff-lite 1.11 с защитой OnionHEN/etaHEN, 16 CNT_FALLBACKS + protected.rs и ps5-dump-forge #62.',
     patchFile: 'TITAN-CORE-v1.0-mod-20261118-v2.2.patch',
     elfReportFile: 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf.txt',
   },
@@ -70,7 +81,7 @@ export const BUILT_ELF_ARTIFACT_MAP: Record<BuiltElfArtifactId, BuiltElfSpec> =
   >;
 
 export const DEFAULT_BUILT_ELF_ID: BuiltElfArtifactId =
-  'TITAN-CORE-v1.0-mod-20261118-v2.2.elf';
+  'TITAN-CORE-v1.0-mod-20261118-v2.3.elf';
 
 export function resolveBuiltElfArtifact(rawId: unknown): BuiltElfSpec {
   if (
@@ -83,6 +94,12 @@ export function resolveBuiltElfArtifact(rawId: unknown): BuiltElfSpec {
 }
 
 export const DOWNLOADABLE_BUILD_FILES: readonly string[] = [
+  'TITAN-CORE-v1.0-mod-20261118-v2.3.elf',
+  'TITAN-CORE-v1.0.3-mod-20261118-src.tar.gz',
+  'TITAN-CORE-v1.0-mod-20261118-v2.3.patch',
+  'TITAN-CORE-v1.0-mod-20261118-v2.3.elf.txt',
+  'RELEASE-v1.0.3-mod-v2.3.md',
+  'publish-github-release.sh',
   'TITAN-CORE-v1.0-mod-20261118-v2.2.elf',
   'TITAN-CORE-v1.0.2-mod-20261118-src.tar.gz',
   'TITAN-CORE-v1.0-mod-20261118-v2.2.patch',

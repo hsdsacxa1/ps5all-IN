@@ -7,6 +7,7 @@ import { DumpModArtifactsPanel } from './DumpModArtifactsPanel';
 import { DumpModCatalogPanel } from './DumpModCatalogPanel';
 import { DumpModConfiguratorPanel } from './DumpModConfiguratorPanel';
 import { DumpModDiagnosticPanel } from './DumpModDiagnosticPanel';
+import { HighFwFeasibilityPanel } from './HighFwFeasibilityPanel';
 
 const INITIAL_DUMP_MOD_CONFIG: DumpModRecipeConfig = {
   gameTitle: "Marvel's Spider-Man 2",
@@ -39,6 +40,7 @@ export const DumpModsView: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <HighFwFeasibilityPanel onApplyPreset={handleApplyPreset} />
       <DumpModCatalogPanel onApplyPreset={handleApplyPreset} />
       <DumpModDiagnosticPanel onApplyPreset={handleApplyPreset} />
       <div ref={configuratorRef}>

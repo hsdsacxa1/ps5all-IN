@@ -26,6 +26,14 @@ import {
   TITAN_CORE_RELEASE_FILES,
   TITAN_CORE_RELEASE_TAG,
 } from './titanCoreReleaseData';
+import {
+  compareThreePartVersions,
+  isProtectedY2jbTitleId,
+  matchBackportCatalogEntry,
+  SAMPLE_BACKPORT_CATALOG_V1,
+  TITAN_FORK_COMPARISON_MATRIX,
+  validateBackportFileRelativePath,
+} from './titanForkComparison';
 
 test('diagnoseKrakenIssue identifies sparse extent PKG bug and ShadowMountPlus unionfs collision', () => {
   const sparseMatch = diagnoseKrakenIssue(
@@ -96,26 +104,81 @@ test('krakenMountStrategy creates valid container entries for pkg, zstd, and lz4
   assert.ok(MOUNTER_COMPARISON_MATRIX.length >= 5);
 });
 
-test('titanCoreModSpec lists all 13 Mod v2.2 fork patches and release artifacts', () => {
-  assert.equal(TITAN_CORE_MOD_PATCHES.length, 13);
-  assert.equal(TITAN_CORE_MOD_SUMMARY.elfArtifact, 'TITAN-CORE-v1.0-mod-20261118-v2.2.elf');
-  assert.equal(TITAN_CORE_MOD_SUMMARY.patchArtifact, 'TITAN-CORE-v1.0-mod-20261118-v2.2.patch');
-  assert.equal(TITAN_CORE_RELEASE_TAG, 'v1.0.2-mod-20261118');
-  assert.equal(TITAN_CORE_RELEASE_FILES.length, 7);
+test('titanCoreModSpec lists all 18 Mod v2.3 fork patches while preserving Mod v2.2 release artifacts', () => {
+  assert.equal(TITAN_CORE_MOD_PATCHES.length, 18);
+  assert.equal(TITAN_CORE_MOD_SUMMARY.elfArtifact, 'TITAN-CORE-v1.0-mod-20261118-v2.3.elf');
+  assert.equal(TITAN_CORE_MOD_SUMMARY.patchArtifact, 'TITAN-CORE-v1.0-mod-20261118-v2.3.patch');
+  assert.equal(
+    TITAN_CORE_MOD_SUMMARY.preservedV22ElfArtifact,
+    'TITAN-CORE-v1.0-mod-20261118-v2.2.elf'
+  );
+  assert.equal(
+    TITAN_CORE_MOD_SUMMARY.preservedV22PatchArtifact,
+    'TITAN-CORE-v1.0-mod-20261118-v2.2.patch'
+  );
+  assert.equal(TITAN_CORE_RELEASE_TAG, 'v1.0.3-mod-20261118');
+  assert.equal(TITAN_CORE_RELEASE_FILES.length, 13);
+  assert.ok(
+    TITAN_CORE_RELEASE_FILES.some(
+      (f) => f.filename === 'TITAN-CORE-v1.0.3-mod-20261118-src.tar.gz'
+    )
+  );
+  assert.ok(
+    TITAN_CORE_RELEASE_FILES.some(
+      (f) => f.filename === 'publish-github-release.sh'
+    )
+  );
   assert.ok(
     TITAN_CORE_RELEASE_FILES.some(
       (f) => f.filename === 'TITAN-CORE-v1.0.2-mod-20261118-src.tar.gz'
     )
   );
-  assert.ok(TITAN_CORE_GITHUB_README_PREVIEW.includes('ffb3f6f60a03a40cd24745e47fd240222241fa48b191f1aeda77d9be423f9333'));
+  assert.ok(TITAN_CORE_GITHUB_README_PREVIEW.includes('189183ee84d2d12f73c7c3d7e3999291eed7c7460a90389b8e67292dcc68f1de'));
   assert.ok(TITAN_CORE_GITHUB_README_PREVIEW.includes('Upgraded fork of devchmod/TITAN-CORE'));
-  assert.equal(filterTitanCorePatches('all').length, 13);
+  assert.equal(filterTitanCorePatches('all').length, 18);
+  assert.equal(filterTitanCorePatches('gdrive-telemetry').length, 1);
+  assert.equal(filterTitanCorePatches('grimmtroll-fix7-port').length, 5);
   assert.equal(filterTitanCorePatches('debug-memory').length, 2);
   assert.equal(filterTitanCorePatches('dump-formats').length, 3);
   assert.equal(filterTitanCorePatches('hen-guard').length, 1);
   assert.equal(filterTitanCorePatches('containers').length, 2);
   assert.equal(filterTitanCorePatches('scanner-config').length, 3);
-  assert.equal(filterTitanCorePatches('upstream-v1').length, 2);
+  assert.equal(filterTitanCorePatches('upstream-v1').length, 1);
+});
+
+test('titanForkComparison validates 3-region Y2JB guard, numeric 3-part versions (01.008.000 == 1.8.0), and Schema v1 backports', () => {
+  assert.equal(TITAN_FORK_COMPARISON_MATRIX.length, 8);
+  assert.equal(isProtectedY2jbTitleId('PPSA01650'), true);
+  assert.equal(isProtectedY2jbTitleId('ppsa01651'), true);
+  assert.equal(isProtectedY2jbTitleId('PPSA01652'), true);
+  assert.equal(isProtectedY2jbTitleId('PPSA08560'), false);
+
+  assert.equal(compareThreePartVersions('01.008.000', '1.8.0'), 0);
+  assert.ok((compareThreePartVersions('01.009.000', '1.8.0') ?? 0) > 0);
+
+  assert.equal(validateBackportFileRelativePath('fakelib/libScePlayGo.sprx').valid, true);
+  assert.equal(validateBackportFileRelativePath('eboot.bin').valid, true);
+  assert.equal(validateBackportFileRelativePath('fakelib/libSceAmpr.sprx').valid, false);
+  assert.equal(validateBackportFileRelativePath('../eboot.bin').valid, false);
+
+  const matchOk = matchBackportCatalogEntry(SAMPLE_BACKPORT_CATALOG_V1, {
+    titleId: 'PPSA08560',
+    gameVersion: '1.8.0',
+    firmware: '13.60',
+    consoleModel: 'base',
+    sourceKind: 'pkg',
+  });
+  assert.equal(matchOk.matched, true);
+
+  const y2jbBlocked = matchBackportCatalogEntry(SAMPLE_BACKPORT_CATALOG_V1, {
+    titleId: 'PPSA01651',
+    gameVersion: '01.009.253',
+    firmware: '13.60',
+    consoleModel: 'base',
+    sourceKind: 'pkg',
+  });
+  assert.equal(y2jbBlocked.matched, false);
+  assert.ok(y2jbBlocked.reason.includes('protected Y2JB host'));
 });
 
 test('titanCoreDumpFormats classifies all 7 PS5 dump formats cleanly without switch statements', () => {

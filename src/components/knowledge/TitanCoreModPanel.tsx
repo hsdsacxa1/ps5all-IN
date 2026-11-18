@@ -10,13 +10,16 @@ import {
 } from '../../mounters/titanCoreModSpec';
 import { TitanCoreDebugMatrixCard } from './TitanCoreDebugMatrixCard';
 import { TitanCoreReleaseCard } from './TitanCoreReleaseCard';
+import { TitanForkComparisonCard } from './TitanForkComparisonCard';
+import { TitanGithubReleaseCard } from './TitanGithubReleaseCard';
+import { TitanGoogleDriveTelemetryCard } from './TitanGoogleDriveTelemetryCard';
 
 export const TitanCoreModPanel: React.FC = () => {
   const [activeCategory, setActiveCategory] =
     useState<TitanCorePatchCategory>('all');
   const filteredPatches = filterTitanCorePatches(activeCategory);
   const [selectedPatchId, setSelectedPatchId] = useState<string>(
-    filteredPatches[0]?.id ?? 'debug-memory-vmmap-collector'
+    filteredPatches[0]?.id ?? 'gdrive-crash-telemetry-uploader'
   );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [diskInfo, setDiskInfo] = useState<BuiltElfDiskInfo | null>(null);
@@ -59,7 +62,7 @@ export const TitanCoreModPanel: React.FC = () => {
 
   const formattedSize = diskInfo?.exists
     ? `${diskInfo.sizeBytes.toLocaleString('en-US')} байт (${(diskInfo.sizeBytes / (1024 * 1024)).toFixed(2)} MiB)`
-    : 'Собранный PS5 ELF64 (2-stage self-copy)';
+    : 'Собранный PS5 ELF64 (Mod v2.3 + сохранённый Mod v2.2)';
 
   return (
     <div className="p-6 rounded-xl border-2 border-emerald-500/40 dark:border-emerald-500/30 bg-white dark:bg-slate-900 space-y-5">
@@ -70,10 +73,10 @@ export const TitanCoreModPanel: React.FC = () => {
             <span>{TITAN_CORE_MOD_SUMMARY.versionLabel}</span>
           </div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            Улучшенный форк TITAN-CORE (Собранный ELF Mod v2.2 от 18.11.2026)
+            Объединённый форк TITAN-CORE Mod v2.3 (Google Drive Телеметрия + порт grimmtroll/TITAN FIX7 + сохранённый Mod v2.2)
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Кросс-скомпилированный 2-stage LTO ELF (<code className="font-mono">Mod v2.2</code>) включает в себя: встроенный <strong>сборщик дебаг-бандлов памяти и ошибок</strong> (<code className="font-mono">GET /api/debug/memory</code> с <code className="font-mono">getrusage</code> + <code className="font-mono">KERN_PROC_VMMAP</code>, кольцевой буфер 256 <code className="font-mono">errno</code>, авто-дамп <code className="font-mono">last-crash-bundle.json</code> при панике и детектор коллизий <code className="font-mono">unionfs</code>), поддержку <strong>всех 7 форматов дампов</strong> (<code className="font-mono">folder</code>, <code className="font-mono">lz4</code>, <code className="font-mono">zstd</code>, <code className="font-mono">pkg</code>/split, <code className="font-mono">ffpkg/ffpfsc</code>, <code className="font-mono">zst/lz4</code>-архивы, <code className="font-mono">exfat/img</code>), очистку <code className="font-mono">/data/ampr_cache</code> и реальный порт <code className="font-mono">ps5-dump-forge #62</code> + <code className="font-mono">ampr-emu-ng 3ced5c0</code>.
+            Новая сборка <code className="font-mono">Mod v2.3</code> объединяет наш движок <code className="font-mono">Mod v2.2</code> (256 MiB <code className="font-mono">ampr-emu-ng 3ced5c0</code>, дебаг-коллектор <code className="font-mono">KERN_PROC_VMMAP</code> + 256-slot <code className="font-mono">errno</code>, все 7 форматов дампов) с <strong>автоматической выгрузкой репортов с ошибками на Google Диск</strong> (OAuth 2.0 + автономный Google Apps Script Webhook) и лучшими решениями из <code className="font-mono">grimmtroll2285-dot/TITAN (FIX7 v1.0.5)</code>: встроенный <strong>PlayGo Stub 0.6</strong> (<code className="font-mono">libScePlayGo.sprx</code> с чекбоксами игр), защита всех <strong>3 регионов Y2JB</strong> (<code className="font-mono">PPSA01650/1/2</code>), изоляция <strong>ShadowMountPlus 1.7beta12-isolated4</strong>, мягкий unmount без <code className="font-mono">MNT_FORCE</code> и менеджер каталогов бэкпортов <strong>Schema v1</strong>. Предыдущая сборка <code className="font-mono">Mod v2.2</code> полностью сохранена ниже.
           </p>
         </div>
 
@@ -84,7 +87,7 @@ export const TitanCoreModPanel: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 shadow-xs whitespace-nowrap"
           >
             <Download className="w-4 h-4" />
-            <span>Скачать {TITAN_CORE_MOD_SUMMARY.elfArtifact}</span>
+            <span>Скачать Mod v2.3 (.elf)</span>
           </a>
           <a
             href={getBuildDownloadUrl(TITAN_CORE_MOD_SUMMARY.patchArtifact)}
@@ -92,7 +95,15 @@ export const TitanCoreModPanel: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 whitespace-nowrap"
           >
             <FileCode2 className="w-4 h-4" />
-            <span>Mod v2.2 (.patch)</span>
+            <span>Mod v2.3 (.patch)</span>
+          </a>
+          <a
+            href={getBuildDownloadUrl(TITAN_CORE_MOD_SUMMARY.preservedV22PatchArtifact)}
+            download={TITAN_CORE_MOD_SUMMARY.preservedV22PatchArtifact}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 whitespace-nowrap"
+          >
+            <FileCode2 className="w-3.5 h-3.5" />
+            <span>Mod v2.2 Preserved (.patch)</span>
           </a>
           <a
             href={getBuildDownloadUrl(TITAN_CORE_MOD_SUMMARY.elfReportArtifact)}
@@ -109,19 +120,28 @@ export const TitanCoreModPanel: React.FC = () => {
       <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-1.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
           <span className="font-semibold text-emerald-700 dark:text-emerald-300">
-            Compiled ELF: public/builds/{TITAN_CORE_MOD_SUMMARY.elfArtifact} · Patch: {TITAN_CORE_MOD_SUMMARY.patchArtifact}
+            Active Mod v2.3: {TITAN_CORE_MOD_SUMMARY.elfArtifact} · Preserved Mod v2.2: {TITAN_CORE_MOD_SUMMARY.preservedV22ElfArtifact}
           </span>
           <span className="text-slate-700 dark:text-slate-200 tabular-nums">
             {formattedSize}
           </span>
         </div>
         <div className="text-[11px] font-mono text-slate-600 dark:text-slate-400 break-all">
-          SHA-256 ELF: {diskInfo?.sha256 ?? 'ffb3f6f60a03a40cd24745e47fd240222241fa48b191f1aeda77d9be423f9333'} · Тесты: {TITAN_CORE_MOD_SUMMARY.rustTestsPassed}
+          Mod v2.3 Src SHA-256: 189183ee84d2d12f73c7c3d7e3999291eed7c7460a90389b8e67292dcc68f1de · Preserved Mod v2.2 Src SHA-256: c2f19184bbadd54e5d1e9be0bcf32728ca8ae7ce61126a6438f8481a58469655
         </div>
       </div>
 
-      {/* GitHub Release Package & README.md */}
+      {/* NEW: Google Drive Crash & Error Telemetry Card */}
+      <TitanGoogleDriveTelemetryCard />
+
+      {/* NEW: Comparison Matrix vs grimmtroll2285-dot/TITAN (FIX7 v1.0.5) & Backports Schema v1 Validator */}
+      <TitanForkComparisonCard />
+
+      {/* GitHub Release Package (Mod v2.3 + Preserved Mod v2.2) & README.md */}
       <TitanCoreReleaseCard />
+
+      {/* NEW: GitHub Release Publisher (API + GitHub Actions Docker ELF64 + CLI script) */}
+      <TitanGithubReleaseCard />
 
       {/* All 7 Dump Formats & Memory/Error Debug Bundle Matrix */}
       <TitanCoreDebugMatrixCard />

@@ -65,14 +65,14 @@ export const FIRMWARE_MITIGATION_TIMELINE: readonly FirmwareMitigationTimelinePo
       'Верхняя граница джейлбрейка: Y2JB v1.1.0 + WebKit + Relapse-Exploit + Byepervisor-Reborn (S3 Resume XOM bypass) + TITAN-CORE / Kraken / SMP 1.7.',
   },
   {
-    fwRange: 'FW 14.00–14.22',
-    releaseEra: 'Late 2026 (Patched Frontier)',
-    entryVectorScore: 22,
-    kernelRwScore: 15,
-    hvBypassScore: 10,
-    hardwareLockdownIndex: 96,
+    fwRange: 'FW 14.00–14.23',
+    releaseEra: 'Late 2026 (Patched / GTA VI Frontier)',
+    entryVectorScore: 18,
+    kernelRwScore: 12,
+    hvBypassScore: 8,
+    hardwareLockdownIndex: 97,
     keyVectorsAndPatches:
-      'Sony пропатчила браузерный WebKit и ядерную уязвимость Relapse; публичного джейлбрейка на 14.00+ нет (обновление строго запрещено).',
+      'Браузер и Relapse закрыты; несмотря на приватный PoC Gezine на 14.22 (без релиза), Sony выпустила патч 14.23. Публичного JB на 14.xx нет — обновление с 13.60 запрещено.',
   },
 ];
 

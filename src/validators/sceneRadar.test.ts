@@ -22,12 +22,18 @@ import {
   summarizeRepoAuditStats,
 } from './sceneRadarFilter';
 
-test('SCENE_NEWS_LATEST contains 18.11.2026 breaking AnyPS5/AnyDevKit, HW/OS RE ecosystem, ps5upload v12.6.7, GarlicTransfer v0.3.1, WH Widgets 26.11.17beta and PS5SD 1.3.1 plus archives', () => {
-  assert.equal(SCENE_NEWS_18112026.length, 8);
+test('SCENE_NEWS_LATEST contains 18.11.2026 breaking Reddit 1xzfh2m / FW 14.22-14.23, AnyPS5/AnyDevKit, HW/OS RE ecosystem, ps5upload v12.6.7, GarlicTransfer v0.3.1, WH Widgets 26.11.17beta and PS5SD 1.3.1 plus archives', () => {
+  assert.equal(SCENE_NEWS_18112026.length, 9);
   assert.equal(SCENE_NEWS_17112026.length, 10);
   assert.ok(SCENE_NEWS_16112026.length >= 7);
-  assert.ok(SCENE_NEWS_LATEST.length >= 33);
+  assert.ok(SCENE_NEWS_LATEST.length >= 34);
   assert.ok(SCENE_NEWS_15112026.some((n) => n.id === 'news-kraken-020'));
+
+  const gta6RedditNews = SCENE_NEWS_18112026.find((n) => n.id === 'news-gta6-1422-1423-reddit-1xzfh2m');
+  assert.ok(gta6RedditNews);
+  assert.equal(gta6RedditNews.severity, 'breaking');
+  assert.ok(gta6RedditNews.versionTag.includes('14.22'));
+  assert.ok(gta6RedditNews.versionTag.includes('14.23'));
 
   const anyps5News = SCENE_NEWS_18112026.find((n) => n.id === 'news-anyps5-anydevkit-ecosystem');
   assert.ok(anyps5News);
