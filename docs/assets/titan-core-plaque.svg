@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300" role="img" aria-label="TITAN-CORE Mod v2.4 — Compiled PS5 7.00–13.60 Unified Mounter">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070B14" />
+      <stop offset="55%" stop-color="#0D1424" />
+      <stop offset="100%" stop-color="#08111E" />
+    </linearGradient>
+    <linearGradient id="accentLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="50%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0.15" />
+    </linearGradient>
+    <linearGradient id="plate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1E293B" stroke-width="0.7" opacity="0.45" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="300" rx="18" fill="url(#bg)" />
+  <rect width="1200" height="300" rx="18" fill="url(#grid)" />
+  <rect x="1" y="1" width="1198" height="298" rx="17" fill="none" stroke="#1E293B" stroke-width="1.5" />
+
+  <!-- Top precision optical seam -->
+  <rect x="52" y="42" width="160" height="3" rx="1.5" fill="url(#accentLine)" />
+
+  <!-- Left Editorial Typography -->
+  <text x="52" y="76" fill="#94A3B8" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif" font-size="14" font-weight="600" letter-spacing="2.2">
+    PLAYSTATION 5 · FIRMWARE 7.00–13.60 · COMPILED ELF64
+  </text>
+
+  <text x="50" y="148" fill="#F8FAFC" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif" font-size="64" font-weight="800" letter-spacing="-1.6">
+    TITAN-CORE
+  </text>
+  <text x="454" y="148" fill="#10B981" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="30" font-weight="700">
+    Mod v2.4
+  </text>
+
+  <text x="52" y="192" fill="#CBD5E1" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif" font-size="19" font-weight="400">
+    Unified Game Mounter · SaveData Fix #68 · ampr-emu-ng 238a72b · dlc_emu 0.3
+  </text>
+
+  <!-- Clean unboxed metadata strip -->
+  <text x="52" y="246" fill="#64748B" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="13.5" font-weight="500">
+    v1.0.4-mod-20261118   ·   16.66 MiB 2-Stage LTO   ·   elfldr :9021   ·   WebUI :8097   ·   7 Dump Formats
+  </text>
+
+  <!-- Right Precision Architectural Core Emblem -->
+  <g transform="translate(870, 44)">
+    <rect x="0" y="0" width="276" height="212" rx="14" fill="url(#plate)" stroke="#334155" stroke-width="1.2" />
+    <path d="M 28 32 L 248 32 M 28 180 L 248 180" stroke="#1E293B" stroke-width="1" />
+    <!-- Isometric Machined Core -->
+    <polygon points="138,44 218,86 138,128 58,86" fill="#0B1220" stroke="#3B82F6" stroke-width="1.6" />
+    <polygon points="138,60 194,89 138,118 82,89" fill="#111C2E" stroke="#10B981" stroke-width="1.5" />
+    <polygon points="58,86 138,128 138,162 58,120" fill="#0F172A" stroke="#334155" stroke-width="1.2" />
+    <polygon points="218,86 138,128 138,162 218,120" fill="#162135" stroke="#334155" stroke-width="1.2" />
+    <line x1="138" y1="74" x2="138" y2="104" stroke="#10B981" stroke-width="2" />
+    <line x1="118" y1="89" x2="158" y2="89" stroke="#3B82F6" stroke-width="2" />
+    <text x="138" y="199" text-anchor="middle" fill="#94A3B8" font-family="'JetBrains Mono', monospace" font-size="11.5">
+      SHA-256: f7270b26…181c45db2
+    </text>
+  </g>
+</svg>
