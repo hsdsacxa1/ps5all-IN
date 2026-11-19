@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TITAN-CORE Mod v2.4 – PS5 7.00–13.60 Unified Mounter &amp; ELF64</title>
-  <meta name="description" content="Download compiled TITAN-CORE Mod v2.4 PS5 ELF64 (16.66 MiB) for FW 7.00–13.60 with SaveData fix, ampr-emu-ng 238a72b, dlc_emu 0.3, safe USB unmount, and crash telemetry." />
+  <title>TITAN-CORE Mod v2.5 – PS5 7.00–13.60 Unified Mounter &amp; ELF64</title>
+  <meta name="description" content="Download compiled TITAN-CORE Mod v2.5 PS5 ELF64 (19.81 MiB) for FW 7.00–13.60 with dual AMPR 5443cb2/MOD 0.5.5, 4-thread PKG, smart PlayGo 0.6, metadata snapshots, and live diagnostics." />
   <meta name="keywords" content="TITAN-CORE, PS5 13.60, PS5 ELF64, PS5 game mounter, ampr-emu-ng, dlc_emu, ShadowMountPlus, kstuff-lite, PS5 homebrew, elfldr 9021" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <link rel="canonical" href="https://hsdsacxa1.github.io/ps5all-IN/" />
@@ -13,16 +13,16 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="TITAN-CORE" />
   <meta property="og:url" content="https://hsdsacxa1.github.io/ps5all-IN/" />
-  <meta property="og:title" content="TITAN-CORE Mod v2.4 – PS5 7.00–13.60 Unified Mounter &amp; ELF64" />
-  <meta property="og:description" content="Ready-to-deploy 16.66 MiB PS5 ELF64 with SaveData fix (#68), ampr-emu-ng 238a72b, drakmor dlc_emu 0.3, 7 dump formats, and safe USB unmount." />
+  <meta property="og:title" content="TITAN-CORE Mod v2.5 – PS5 7.00–13.60 Unified Mounter &amp; ELF64" />
+  <meta property="og:description" content="Ready-to-deploy 19.81 MiB PS5 ELF64 with dual AMPR 5443cb2/MOD 0.5.5, 4-thread PKG extraction, smart PlayGo 0.6, metadata snapshots, and live diagnostics." />
   <meta property="og:image" content="https://hsdsacxa1.github.io/ps5all-IN/assets/titan-core-og.jpg" />
   <meta property="og:image:width" content="1376" />
   <meta property="og:image:height" content="768" />
 
   <!-- Twitter / X Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="TITAN-CORE Mod v2.4 – PS5 7.00–13.60 Unified Mounter" />
-  <meta name="twitter:description" content="Compiled PS5 ELF64 (16.66 MiB) for FW 7.00–13.60 with SaveData fix, ampr-emu-ng 238a72b, dlc_emu 0.3 &amp; WebUI :8097." />
+  <meta name="twitter:title" content="TITAN-CORE Mod v2.5 – PS5 7.00–13.60 Unified Mounter" />
+  <meta name="twitter:description" content="Compiled PS5 ELF64 (19.81 MiB) for FW 7.00–13.60 with dual AMPR 5443cb2/MOD 0.5.5, 4-thread PKG, smart PlayGo 0.6 &amp; WebUI :8097." />
   <meta name="twitter:image" content="https://hsdsacxa1.github.io/ps5all-IN/assets/titan-core-og.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -35,16 +35,16 @@
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "TITAN-CORE Mod v2.4",
+      "name": "TITAN-CORE Mod v2.5",
       "alternateName": "TITAN-CORE PS5 Unified Mounter",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "PlayStation 5 Firmware 7.00-13.60 (FreeBSD / Orbis)",
-      "softwareVersion": "v1.0.4-mod-20261118",
-      "fileSize": "16.66MB",
-      "downloadUrl": "https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.4-mod-20261118/TITAN-CORE-v1.0-mod-20261118-v2.4.elf",
+      "softwareVersion": "v1.0.5-mod-20261119",
+      "fileSize": "19.81MB",
+      "downloadUrl": "https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.5-mod-20261119/TITAN-CORE-v1.0-mod-20261119-v2.5.elf",
       "url": "https://hsdsacxa1.github.io/ps5all-IN/",
       "image": "https://hsdsacxa1.github.io/ps5all-IN/assets/titan-core-og.jpg",
-      "description": "Compiled PS5 ELF64 unified game mounter for FW 7.00–13.60 featuring SaveData protection (#68), ampr-emu-ng 238a72b, drakmor dlc_emu 0.3, PlayGo Stub 0.6, safe USB unmount, and crash telemetry.",
+      "description": "Compiled PS5 ELF64 unified game mounter for FW 7.00–13.60 featuring dual AMPR profiles (5443cb2 + MOD 0.5.5), 4-thread PKG extraction, smart PlayGo Stub 0.6 auto-detect, metadata snapshots, SaveData protection (#68), and live runtime diagnostics.",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -57,26 +57,26 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "How do I deploy TITAN-CORE Mod v2.4 ELF64 to PlayStation 5?",
+          "name": "How do I deploy TITAN-CORE Mod v2.5 ELF64 to PlayStation 5?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Start elfldr on PS5 port 9021 via Y2JB or WebKit, then run: nc -w 10 <PS5_IP> 9021 < TITAN-CORE-v1.0-mod-20261118-v2.4.elf and open http://<PS5_IP>:8097/ in your browser."
+            "text": "Start elfldr on PS5 port 9021 via Y2JB or WebKit, then run: nc -w 10 <PS5_IP> 9021 < TITAN-CORE-v1.0-mod-20261119-v2.5.elf and open http://<PS5_IP>:8097/ in your browser."
           }
         },
         {
           "@type": "Question",
-          "name": "Which PS5 firmware versions are supported by TITAN-CORE Mod v2.4?",
+          "name": "Which PS5 firmware versions are supported by TITAN-CORE Mod v2.5?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "TITAN-CORE Mod v2.4 supports PlayStation 5 firmwares 7.00 through 13.60 with built-in OnionHEN / etaHEN guards and all 7 PS5 dump formats."
+            "text": "TITAN-CORE Mod v2.5 supports PlayStation 5 firmwares 7.00 through 13.60 with built-in OnionHEN / etaHEN guards and all 7 PS5 dump formats."
           }
         },
         {
           "@type": "Question",
-          "name": "How does Mod v2.4 protect PS5 game saves?",
+          "name": "What is new in TITAN-CORE Mod v2.5?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "keep_fakelib() blocks libSceSaveData.native.sprx alongside libkernel.sprx and bumps STAMP_V to 3 so dump fakelibs never shadow the system save module."
+            "text": "Mod v2.5 embeds ampr-emu-ng beta 5443cb2 (release + debug idx trace) and modgames44/ampr-emu-ng-MOD 0.5.5, adds smart PlayGo Stub 0.6 auto-detect, 4-thread parallel PKG extraction with pre-flight free-space checks, automatic /user/app & /user/appmeta snapshots with rollback, and live runtime diagnostics (/api/debug/system, /api/debug/klog, /api/debug/dump-forge)."
           }
         }
       ]
@@ -257,8 +257,8 @@
         <a href="#formats">7 Formats</a>
         <a href="#deploy">Deploy</a>
       </nav>
-      <a class="btn-primary" href="https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.4-mod-20261118/TITAN-CORE-v1.0-mod-20261118-v2.4.elf">
-        Download ELF64 (16.66 MiB)
+      <a class="btn-primary" href="https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.5-mod-20261119/TITAN-CORE-v1.0-mod-20261119-v2.5.elf">
+        Download ELF64 (19.81 MiB)
       </a>
     </div>
   </header>
@@ -272,18 +272,18 @@
           <div class="meta-line mono">
             <span>PS5 FW 7.00–13.60</span>
             <span>·</span>
-            <span>v1.0.4-mod-20261118</span>
+            <span>v1.0.5-mod-20261119</span>
             <span>·</span>
             <span>2-Stage LTO ELF64</span>
           </div>
-          <h1>Unified PS5 Game Mounter, Emulators &amp; Crash Telemetry</h1>
+          <h1>Unified PS5 Game Mounter, Dual AMPR &amp; Live Diagnostics</h1>
           <p class="hero-desc">
-            Pre-compiled 16.66 MiB ELF64 payload for PlayStation 5 with SaveData protection (#68),
-            bundled ampr-emu-ng 238a72b, drakmor dlc_emu 0.3, PlayGo Stub 0.6, and safe USB eject.
+            Pre-compiled 19.81 MiB ELF64 payload for PlayStation 5 with dual AMPR profiles (5443cb2 + MOD 0.5.5),
+            4-thread PKG extraction, smart PlayGo Stub 0.6 auto-detect, automatic metadata snapshots, and runtime diagnostics.
           </p>
           <div class="hero-actions">
-            <a class="btn-primary" href="https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.4-mod-20261118/TITAN-CORE-v1.0-mod-20261118-v2.4.elf">
-              Download Mod v2.4 (.elf)
+            <a class="btn-primary" href="https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.5-mod-20261119/TITAN-CORE-v1.0-mod-20261119-v2.5.elf">
+              Download Mod v2.5 (.elf)
             </a>
             <a class="btn-secondary" href="https://github.com/hsdsacxa1/ps5all-IN/releases" target="_blank" rel="noopener">
               All Versioned Releases on GitHub
@@ -294,47 +294,47 @@
 
       <div class="metrics-strip">
         <div class="metric">
-          <div class="metric-val mono">16.66 MiB</div>
-          <div class="metric-lbl">Compiled PS5 ELF64 (Entry 0x9E904)</div>
+          <div class="metric-val mono">19.81 MiB</div>
+          <div class="metric-lbl">Compiled PS5 ELF64 (Entry 0xA8504)</div>
         </div>
         <div class="metric">
           <div class="metric-val mono">7.00–13.60</div>
           <div class="metric-lbl">Verified PS5 Firmware Range</div>
         </div>
         <div class="metric">
-          <div class="metric-val mono">7 Formats</div>
-          <div class="metric-lbl">Folder, LZ4, Zstd, PKG, FFPKG, IMG</div>
+          <div class="metric-val mono">4-Thread PKG</div>
+          <div class="metric-lbl">Pre-flight Free-Space + 7 Formats</div>
         </div>
         <div class="metric">
           <div class="metric-val mono">:9021 / :8097</div>
-          <div class="metric-lbl">elfldr Deploy · Built-in WebUI &amp; Debug</div>
+          <div class="metric-lbl">elfldr Deploy · Built-in WebUI &amp; Diag</div>
         </div>
       </div>
     </div>
 
     <section id="capabilities">
-      <h2>01. Engineered for Stability on PS5 13.60</h2>
-      <p class="section-sub">Every Mod v2.4 subsystem is compiled into one self-contained binary with zero conflicting HEN launches.</p>
+      <h2>01. Engineered for Performance &amp; Stability on PS5 13.60</h2>
+      <p class="section-sub">Every Mod v2.5 subsystem is compiled into one self-contained binary with zero conflicting HEN launches.</p>
       <div class="bento">
         <article class="card bento-wide">
-          <div class="card-kicker mono">SaveData Protection · Kraken #68 / #64 / #76</div>
-          <h3>Zero Save Corruption with Automatic Cache Refresh</h3>
-          <p><code>keep_fakelib()</code> blocks <code>libSceSaveData.native.sprx</code> alongside <code>libkernel.sprx</code> so game dump fakelibs never shadow the system save module. <code>STAMP_V = 3</code> refreshes existing caches automatically on first launch.</p>
+          <div class="card-kicker mono">Dual AMPR Engine · beta 5443cb2 + MOD 0.5.5</div>
+          <h3>Switchable AMPR Profiles, Debug Trace &amp; No-Downgrade Guard</h3>
+          <p>Bundles upstream <code>ampr-emu-ng beta 5443cb2</code> (release + <code>idx</code> debug trace PRX) and <code>modgames44/ampr-emu-ng-MOD 0.5.5</code> with per-title <code>debug_ampr_titles</code> and <code>ampr_no_downgrade = true</code>.</p>
         </article>
         <article class="card">
-          <div class="card-kicker mono">ampr-emu-ng beta 238a72b</div>
-          <h3>256 MiB PRX Pool + Mandatory .pkg AMPR</h3>
-          <p>Includes the <code>ScratchBuffer::reset</code> Drop recursion fix and guarantees AMPR injection for every <code>.pkg</code> title (#73).</p>
+          <div class="card-kicker mono">4-Thread Parallel PKG · STAMP_V = 4</div>
+          <h3>Fast Extraction + /data Pre-Flight Check</h3>
+          <p>Extracts PKG caches across up to 4 scoped threads with deterministic <code>BTreeMap</code> indexing and a <code>+64 MiB</code> free-space guard.</p>
         </article>
         <article class="card">
-          <div class="card-kicker mono">drakmor dlc_emu 0.3 + PlayGo 0.6</div>
-          <h3>Bundled Emulator SPRX Suite</h3>
-          <p>Embeds all 3 verified <code>dlc_emu</code> PRX modules with <code>dlc_emu_exclude</code> plus per-title <code>libScePlayGo.sprx</code> toggles.</p>
+          <div class="card-kicker mono">Smart PlayGo 0.6 + dlc_emu 0.3</div>
+          <h3>Auto-Detect eboot.bin &amp; SaveData Guard</h3>
+          <p>Upgrades older PlayGo stubs to bundled <code>drakmor/pgo_stub 0.6</code> without touching native PlayGo, while keeping <code>libSceSaveData.native.sprx</code> blocked (<code>#68</code>).</p>
         </article>
         <article class="card bento-wide">
-          <div class="card-kicker mono">Safe Storage &amp; Forensics · Port 8097</div>
-          <h3>Safe USB Unmount, 3-Region Y2JB Guard &amp; Live Debug API</h3>
-          <p>Eject <code>/mnt/usb0..7</code> safely via <code>POST /api/usb/unmount</code> without deleting caches, protect Y2JB hosts (<code>PPSA01650/1/2</code>), skip active transfers (<code>stability_wait_seconds = 10</code>), and inspect memory/mounts via <code>/api/debug/*</code>.</p>
+          <div class="card-kicker mono">Metadata Snapshots &amp; Live Diagnostics · Port 8097</div>
+          <h3>Automatic Rollback, Safe USB Eject &amp; Runtime Telemetry</h3>
+          <p>Snapshots <code>/user/app</code> &amp; <code>/user/appmeta</code> before registration with automatic rollback, exposes <code>/api/debug/system</code>, <code>/api/debug/klog</code>, <code>/api/debug/dump-forge</code>, and read-only container probing via <code>/api/images/probe</code>.</p>
         </article>
       </div>
     </section>
@@ -344,7 +344,8 @@
       <p class="section-sub">Switch versions below — each GitHub Release contains only its own verified artifacts and dedicated SHA-256 manifest.</p>
 
       <div class="tabs" role="tablist" aria-label="TITAN-CORE Release Versions">
-        <button class="tab-btn active" type="button" data-ver="v2.4">Mod v2.4 (Latest · ELF64)</button>
+        <button class="tab-btn active" type="button" data-ver="v2.5">Mod v2.5 (Latest · ELF64)</button>
+        <button class="tab-btn" type="button" data-ver="v2.4">Mod v2.4 (Archive · ELF64)</button>
         <button class="tab-btn" type="button" data-ver="v2.3">Mod v2.3 (Archive)</button>
         <button class="tab-btn" type="button" data-ver="v2.2">Mod v2.2 (Baseline)</button>
       </div>
@@ -366,9 +367,9 @@
           </thead>
           <tbody>
             <tr><td>Plain Folder</td><td class="mono">&lt;TITLE_ID&gt;/eboot.bin</td><td>Native / ShadowMountPlus 1.7beta12</td></tr>
-            <tr><td>LZ4 / Zstd Folders</td><td class="mono">ampr_assets.index · ampr_zstd.index</td><td>ampr-emu-ng beta 238a72b (8-byte index #64)</td></tr>
-            <tr><td>Debug &amp; Sparse PKG</td><td class="mono">*.pkg (+ 16 CNT fallbacks)</td><td>titan-core-pkg + mandatory AMPR (#73)</td></tr>
-            <tr><td>PFS / Compressed / Images</td><td class="mono">*.ffpkg · *.ffpfsc · *.zst · *.lz4 · *.exfat · *.img</td><td>Unified ShadowMountPlus + AMPR</td></tr>
+            <tr><td>LZ4 / Zstd Folders</td><td class="mono">ampr_assets.index · ampr_zstd.index</td><td>ampr-emu-ng beta 5443cb2 / MOD 0.5.5 (8-byte index #64)</td></tr>
+            <tr><td>Debug &amp; Sparse PKG</td><td class="mono">*.pkg (+ 16 CNT fallbacks)</td><td>titan-core-pkg 4-thread + mandatory AMPR (#73)</td></tr>
+            <tr><td>PFS / Compressed / Images</td><td class="mono">*.ffpkg · *.ffpfsc · *.zst · *.lz4 · *.exfat · *.img</td><td>Unified ShadowMountPlus + AMPR + Magic Probe</td></tr>
           </tbody>
         </table>
       </div>
@@ -378,7 +379,7 @@
       <h2>04. One-Command Deploy to PS5</h2>
       <p class="section-sub">Send the compiled ELF64 payload to <code>elfldr</code> on TCP port <code>9021</code>, then open <code>http://&lt;PS5_IP&gt;:8097/</code>.</p>
       <div class="code-box">
-        <code id="deploy-cmd">nc -w 10 &lt;PS5_IP&gt; 9021 &lt; TITAN-CORE-v1.0-mod-20261118-v2.4.elf</code>
+        <code id="deploy-cmd">nc -w 10 &lt;PS5_IP&gt; 9021 &lt; TITAN-CORE-v1.0-mod-20261119-v2.5.elf</code>
         <button class="copy-btn" type="button" id="copy-deploy">Copy Command</button>
       </div>
     </section>
@@ -386,7 +387,7 @@
 
   <footer>
     <div class="container footer-row">
-      <span>TITAN-CORE Mod v2.4 · Fork of devchmod/TITAN-CORE · PS5 FW 7.00–13.60</span>
+      <span>TITAN-CORE Mod v2.5 · Fork of devchmod/TITAN-CORE · PS5 FW 7.00–13.60</span>
       <div style="display:flex; gap:18px;">
         <a href="https://github.com/hsdsacxa1/ps5all-IN" target="_blank" rel="noopener">GitHub Repository</a>
         <a href="https://github.com/hsdsacxa1/ps5all-IN/releases" target="_blank" rel="noopener">Releases</a>
@@ -398,7 +399,7 @@
   <script>
     (function () {
       var repo = "hsdsacxa1/ps5all-IN";
-      var releases = [{"versionKey":"v2.4","tag":"v1.0.4-mod-20261118","shortName":"Mod v2.4","title":"TITAN-CORE v1.0.4 Mod v2.4 — Compiled PS5 ELF64 + SaveData Fix + AMPR 238a72b + dlc_emu 0.3","dateLabel":"18.11.2026 (Latest)","isLatest":true,"summary":"Готовый 2-stage LTO бинарник PS5 ELF64 (16.66 MiB) с критическим фиксом сохранений (#68), встроенным ampr-emu-ng beta 238a72b, drakmor dlc_emu 0.3, валидацией ampr_emu.index (#64) и безопасным извлечением USB.","checksumFilename":"SHA256SUMS-v2.4.txt","notesFilename":"RELEASE-v1.0.4-mod-v2.4.md","highlights":["Скомпилированный PS5 ELF64 (17,467,672 B / 16.66 MiB, clang-19.1.7 + Rust 1.99.0 + SDK v0.43)","Фикс сохранений (#68/#64/#76): блокировка libSceSaveData.native.sprx в keep_fakelib() + STAMP_V=3","Встроенный ampr-emu-ng beta 238a72b (фикс рекурсии Drop) + обязательный AMPR для .pkg (#73)","Встроенный drakmor dlc_emu 0.3 (3 SPRX + add_emulators + dlc_emu_exclude #71)","Безопасный USB unmount (POST /api/usb/unmount), stability_wait_seconds = 10 и auto_remove_missing (5 мин)"],"assets":[{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.elf","role":"Compiled PS5 ELF64 Payload (send to elfldr:9021)","sizeLabel":"16.66 MiB","sha256":"f7270b26ebfa10c36e37c2aa7910e549bb19d981c34d219ba00621a181c45db2","highlight":true},{"filename":"TITAN-CORE-v1.0.4-mod-20261118-src.tar.gz","role":"Complete Mod v2.4 Source Archive + Verified Vendor SPRX","sizeLabel":"1.49 MiB","sha256":"01943a0f06eedd2726bd5556c41afccea2eebcd77fb2cb27299b2cc0661326ba"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.patch","role":"Cumulative Unified Git Diff vs Upstream 2e1f186","sizeLabel":"109.8 KiB","sha256":"7874564cb8af54065600c67929412ab69023add05996c7c7f9b8c306c4823275"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.elf.txt","role":"Verified llvm-readelf -h -d Dynamic Imports Report","sizeLabel":"2.8 KiB","sha256":"8f82587758107f12103c1d95b08883b07d295887ea48b301e91e21f014a55f7e"},{"filename":"RELEASE-v1.0.4-mod-v2.4.md","role":"Release Notes & Technical Changelog","sizeLabel":"3.2 KiB","sha256":"83f88ec45396394163b600f1cba49881d55e7afe3699e243462455c7811ab9df"},{"filename":"SHA256SUMS-v2.4.txt","role":"Dedicated SHA-256 Checksums for Mod v2.4 Only","sizeLabel":"0.6 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.4.txt"}]},{"versionKey":"v2.3","tag":"v1.0.3-mod-20261118","shortName":"Mod v2.3","title":"TITAN-CORE v1.0.3 Mod v2.3 — Google Drive Telemetry + grimmtroll/TITAN FIX7 Port","dateLabel":"18.11.2026 (Archive)","isLatest":false,"summary":"Изолированный релиз Mod v2.3: облачная телеметрия крэшей в Google Drive (OAuth 2.0 + автономный Apps Script Webhook) и порт лучших решений grimmtroll2285-dot/TITAN FIX7.","checksumFilename":"SHA256SUMS-v2.3.txt","notesFilename":"RELEASE-v1.0.3-mod-v2.3.md","highlights":["Google Drive Crash Telemetry (OAuth 2.0 + автономный Webhook для оффлайн-консолей DNS 127.0.0.2)","Встроенный PlayGo Stub 0.6 (libScePlayGo.sprx) с выборочной инъекцией по Title ID","Защита всех 3 регионов Y2JB YouTube Host (PPSA01650 / PPSA01651 / PPSA01652)","Изоляция ShadowMountPlus 1.7beta12-isolated4 и мягкий unmount без MNT_FORCE","Менеджер бэкпортов Schema v1 с числовым сравнением 3-частных версий (01.008.000 == 1.8.0)"],"assets":[{"filename":"TITAN-CORE-v1.0.3-mod-20261118-src.tar.gz","role":"Mod v2.3 Complete Source Archive","sizeLabel":"1.12 MiB","sha256":"189183ee84d2d12f73c7c3d7e3999291eed7c7460a90389b8e67292dcc68f1de","highlight":true},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.3.patch","role":"Mod v2.3 Unified Git Diff","sizeLabel":"77.1 KiB","sha256":"119f42896fb676980e641e06e00117c9f61b05ce78aade03f831c71235e646fb"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.3.elf.txt","role":"Mod v2.3 llvm-readelf Header Report","sizeLabel":"2.8 KiB","sha256":"9aaf09aeba55ab87139ff60ac4c3ab59a4f1bcb0c1b8786bf5c710c1897073bd"},{"filename":"RELEASE-v1.0.3-mod-v2.3.md","role":"Mod v2.3 Release Notes","sizeLabel":"4.1 KiB","sha256":"509238c87784df109b617b81972a187c995128385737193afbe1df7f42ad2a2d"},{"filename":"SHA256SUMS-v2.3.txt","role":"Dedicated SHA-256 Checksums for Mod v2.3 Only","sizeLabel":"0.4 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.3.txt"}]},{"versionKey":"v2.2","tag":"v1.0.2-mod-20261118","shortName":"Mod v2.2","title":"TITAN-CORE v1.0.2 Mod v2.2 — Memory/Error Debug Forensics + All 7 PS5 Dump Formats","dateLabel":"18.11.2026 (Baseline)","isLatest":false,"summary":"Изолированный базовый релиз Mod v2.2: коллектор диагностики памяти/ошибок (/api/debug/*), 256-slot errno ring buffer, защита OnionHEN/etaHEN и классификатор всех 7 форматов дампов PS5.","checksumFilename":"SHA256SUMS-v2.2.txt","notesFilename":"RELEASE-v1.0.2-mod-v2.2.md","highlights":["Debug API (:8097): /api/debug/memory (KERN_PROC_VMMAP), /api/debug/mounts, /api/debug/error-dump, /api/debug/bundle","Авто-дамп крэша в /data/titan-core/debug/last-crash-bundle.json и 256-slot errno ring buffer","Поддержка всех 7 форматов дампов (plain, LZ4, Zstd, debug/sparse PKG, ffpkg/ffpfsc, .zst/.lz4, .exfat/.img)","16 CNT_FALLBACKS + protected.rs (SHA3-256 / AES-128-CBC) и OnionHEN/etaHEN Guard"],"assets":[{"filename":"TITAN-CORE-v1.0.2-mod-20261118-src.tar.gz","role":"Mod v2.2 Source Archive","sizeLabel":"1.12 MiB","sha256":"c2f19184bbadd54e5d1e9be0bcf32728ca8ae7ce61126a6438f8481a58469655","highlight":true},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.2.patch","role":"Mod v2.2 Unified Git Diff vs 2e1f186","sizeLabel":"73.0 KiB","sha256":"b6f157ffebc7379fe53f91b2ef8808500c1761371e3ac1904346776699ac6b5d"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.2.elf.txt","role":"Mod v2.2 llvm-readelf Header Report","sizeLabel":"2.8 KiB","sha256":"c54a6b30d6cbba5bfebe809c22b3994751b5c3b60eb25fff59f1acdf6d885c6c"},{"filename":"RELEASE-v1.0.2-mod-v2.2.md","role":"Mod v2.2 Release Notes","sizeLabel":"3.0 KiB","sha256":"287bbadcd0b36d1696dcef891779974236f5e562a0a930e60fb8ca1e44fcf7da"},{"filename":"SHA256SUMS-v2.2.txt","role":"Dedicated SHA-256 Checksums for Mod v2.2 Only","sizeLabel":"0.4 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.2.txt"}]}];
+      var releases = [{"versionKey":"v2.5","tag":"v1.0.5-mod-20261119","shortName":"Mod v2.5","title":"TITAN-CORE v1.0.5 Mod v2.5 — Compiled PS5 ELF64 + AMPR 5443cb2/MOD 0.5.5 + 4-Thread PKG + Smart PlayGo + Live Diagnostics","dateLabel":"19.11.2026 (Latest)","isLatest":true,"summary":"Готовый 2-stage LTO бинарник PS5 ELF64 (19.81 MiB, Entry 0xA8504) со встроенным ampr-emu-ng beta 5443cb2 (release + debug idx trace), профилем modgames44/ampr-emu-ng-MOD 0.5.5, умным авто-детектом PlayGo 0.6 по eboot.bin, 4-поточной распаковкой PKG (STAMP_V=4), авто-снимками метаданных и живой диагностикой рантайма (/api/debug/system, /api/debug/klog, /api/debug/dump-forge).","checksumFilename":"SHA256SUMS-v2.5.txt","notesFilename":"RELEASE-v1.0.5-mod-v2.5.md","highlights":["Скомпилированный PS5 ELF64 (20,777,280 B / 19.81 MiB, Entry 0xA8504, clang-19.1.7 + Rust 1.99.0 + SDK v0.43)","Двойной профиль AMPR: upstream beta 5443cb2 (release + debug idx trace) + modgames44/ampr-emu-ng-MOD 0.5.5 + no-downgrade guard","Умный авто-детект drakmor PlayGo Stub 0.6 по импортам eboot.bin (апгрейд 0.4/0.5 без затирания нативного PlayGo)","4-поточная распаковка PKG (cache_workers = 1..=4, STAMP_V=4) + pre-flight проверка /data (+64 MiB)","Авто-снимки /user/app и /user/appmeta с авто-откатом + диагностика /api/debug/system, /api/debug/klog, /api/debug/dump-forge и /api/images/probe"],"assets":[{"filename":"TITAN-CORE-v1.0-mod-20261119-v2.5.elf","role":"Compiled PS5 ELF64 Payload (send to elfldr:9021)","sizeLabel":"19.81 MiB","sha256":"7457835db11439993f073217939572e5182c07cdf34d8c4dd12c3e3a29a51700","highlight":true},{"filename":"TITAN-CORE-v1.0.5-mod-20261119-src.tar.gz","role":"Complete Mod v2.5 Source Archive + Verified Vendor SPRX","sizeLabel":"2.23 MiB","sha256":"7adfb6439ed11cf6b8a6e8bd41d356ab653a0ea15f9698f49ba21ce37acb625b"},{"filename":"TITAN-CORE-v1.0-mod-20261119-v2.5.patch","role":"Cumulative Unified Git Diff vs Upstream 2e1f186","sizeLabel":"173.3 KiB","sha256":"c2bce4092c7b42e355151a03d52c0d4a7e7a7aa828b784877c571391821e338e"},{"filename":"TITAN-CORE-v1.0-mod-20261119-v2.5.elf.txt","role":"Verified llvm-readelf -h -d Dynamic Imports Report (Entry 0xA8504)","sizeLabel":"2.5 KiB","sha256":"00fac6790e39b2350e9c4423a752673c9531a231677e8719bfb1a07175846368"},{"filename":"RELEASE-v1.0.5-mod-v2.5.md","role":"Mod v2.5 Release Notes & Technical Changelog","sizeLabel":"4.0 KiB","sha256":"07079e940a2fa472a8aadaeb9d54a13c3e69ce6fe94006847d021ad90c113c44"},{"filename":"SHA256SUMS-v2.5.txt","role":"Dedicated SHA-256 Checksums for Mod v2.5 Only","sizeLabel":"0.5 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.5.txt"}]},{"versionKey":"v2.4","tag":"v1.0.4-mod-20261118","shortName":"Mod v2.4","title":"TITAN-CORE v1.0.4 Mod v2.4 — Compiled PS5 ELF64 + SaveData Fix + AMPR 238a72b + dlc_emu 0.3","dateLabel":"18.11.2026 (Archive)","isLatest":false,"summary":"Сохранённый 2-stage LTO бинарник PS5 ELF64 (16.66 MiB) с критическим фиксом сохранений (#68), встроенным ampr-emu-ng beta 238a72b, drakmor dlc_emu 0.3, валидацией ampr_emu.index (#64) и безопасным извлечением USB.","checksumFilename":"SHA256SUMS-v2.4.txt","notesFilename":"RELEASE-v1.0.4-mod-v2.4.md","highlights":["Скомпилированный PS5 ELF64 (17,467,672 B / 16.66 MiB, clang-19.1.7 + Rust 1.99.0 + SDK v0.43)","Фикс сохранений (#68/#64/#76): блокировка libSceSaveData.native.sprx в keep_fakelib() + STAMP_V=3","Встроенный ampr-emu-ng beta 238a72b (фикс рекурсии Drop) + обязательный AMPR для .pkg (#73)","Встроенный drakmor dlc_emu 0.3 (3 SPRX + add_emulators + dlc_emu_exclude #71)","Безопасный USB unmount (POST /api/usb/unmount), stability_wait_seconds = 10 и auto_remove_missing (5 мин)"],"assets":[{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.elf","role":"Compiled PS5 ELF64 Payload (send to elfldr:9021)","sizeLabel":"16.66 MiB","sha256":"f7270b26ebfa10c36e37c2aa7910e549bb19d981c34d219ba00621a181c45db2","highlight":true},{"filename":"TITAN-CORE-v1.0.4-mod-20261118-src.tar.gz","role":"Complete Mod v2.4 Source Archive + Verified Vendor SPRX","sizeLabel":"1.49 MiB","sha256":"01943a0f06eedd2726bd5556c41afccea2eebcd77fb2cb27299b2cc0661326ba"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.patch","role":"Cumulative Unified Git Diff vs Upstream 2e1f186","sizeLabel":"109.8 KiB","sha256":"7874564cb8af54065600c67929412ab69023add05996c7c7f9b8c306c4823275"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.elf.txt","role":"Verified llvm-readelf -h -d Dynamic Imports Report","sizeLabel":"2.8 KiB","sha256":"8f82587758107f12103c1d95b08883b07d295887ea48b301e91e21f014a55f7e"},{"filename":"RELEASE-v1.0.4-mod-v2.4.md","role":"Release Notes & Technical Changelog","sizeLabel":"3.2 KiB","sha256":"83f88ec45396394163b600f1cba49881d55e7afe3699e243462455c7811ab9df"},{"filename":"SHA256SUMS-v2.4.txt","role":"Dedicated SHA-256 Checksums for Mod v2.4 Only","sizeLabel":"0.6 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.4.txt"}]},{"versionKey":"v2.3","tag":"v1.0.3-mod-20261118","shortName":"Mod v2.3","title":"TITAN-CORE v1.0.3 Mod v2.3 — Google Drive Telemetry + grimmtroll/TITAN FIX7 Port","dateLabel":"18.11.2026 (Archive)","isLatest":false,"summary":"Изолированный релиз Mod v2.3: облачная телеметрия крэшей в Google Drive (OAuth 2.0 + автономный Apps Script Webhook) и порт лучших решений grimmtroll2285-dot/TITAN FIX7.","checksumFilename":"SHA256SUMS-v2.3.txt","notesFilename":"RELEASE-v1.0.3-mod-v2.3.md","highlights":["Google Drive Crash Telemetry (OAuth 2.0 + автономный Webhook для оффлайн-консолей DNS 127.0.0.2)","Встроенный PlayGo Stub 0.6 (libScePlayGo.sprx) с выборочной инъекцией по Title ID","Защита всех 3 регионов Y2JB YouTube Host (PPSA01650 / PPSA01651 / PPSA01652)","Изоляция ShadowMountPlus 1.7beta12-isolated4 и мягкий unmount без MNT_FORCE","Менеджер бэкпортов Schema v1 с числовым сравнением 3-частных версий (01.008.000 == 1.8.0)"],"assets":[{"filename":"TITAN-CORE-v1.0.3-mod-20261118-src.tar.gz","role":"Mod v2.3 Complete Source Archive","sizeLabel":"1.12 MiB","sha256":"189183ee84d2d12f73c7c3d7e3999291eed7c7460a90389b8e67292dcc68f1de","highlight":true},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.3.patch","role":"Mod v2.3 Unified Git Diff","sizeLabel":"77.1 KiB","sha256":"119f42896fb676980e641e06e00117c9f61b05ce78aade03f831c71235e646fb"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.3.elf.txt","role":"Mod v2.3 llvm-readelf Header Report","sizeLabel":"2.8 KiB","sha256":"9aaf09aeba55ab87139ff60ac4c3ab59a4f1bcb0c1b8786bf5c710c1897073bd"},{"filename":"RELEASE-v1.0.3-mod-v2.3.md","role":"Mod v2.3 Release Notes","sizeLabel":"4.1 KiB","sha256":"509238c87784df109b617b81972a187c995128385737193afbe1df7f42ad2a2d"},{"filename":"SHA256SUMS-v2.3.txt","role":"Dedicated SHA-256 Checksums for Mod v2.3 Only","sizeLabel":"0.4 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.3.txt"}]},{"versionKey":"v2.2","tag":"v1.0.2-mod-20261118","shortName":"Mod v2.2","title":"TITAN-CORE v1.0.2 Mod v2.2 — Memory/Error Debug Forensics + All 7 PS5 Dump Formats","dateLabel":"18.11.2026 (Baseline)","isLatest":false,"summary":"Изолированный базовый релиз Mod v2.2: коллектор диагностики памяти/ошибок (/api/debug/*), 256-slot errno ring buffer, защита OnionHEN/etaHEN и классификатор всех 7 форматов дампов PS5.","checksumFilename":"SHA256SUMS-v2.2.txt","notesFilename":"RELEASE-v1.0.2-mod-v2.2.md","highlights":["Debug API (:8097): /api/debug/memory (KERN_PROC_VMMAP), /api/debug/mounts, /api/debug/error-dump, /api/debug/bundle","Авто-дамп крэша в /data/titan-core/debug/last-crash-bundle.json и 256-slot errno ring buffer","Поддержка всех 7 форматов дампов (plain, LZ4, Zstd, debug/sparse PKG, ffpkg/ffpfsc, .zst/.lz4, .exfat/.img)","16 CNT_FALLBACKS + protected.rs (SHA3-256 / AES-128-CBC) и OnionHEN/etaHEN Guard"],"assets":[{"filename":"TITAN-CORE-v1.0.2-mod-20261118-src.tar.gz","role":"Mod v2.2 Source Archive","sizeLabel":"1.12 MiB","sha256":"c2f19184bbadd54e5d1e9be0bcf32728ca8ae7ce61126a6438f8481a58469655","highlight":true},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.2.patch","role":"Mod v2.2 Unified Git Diff vs 2e1f186","sizeLabel":"73.0 KiB","sha256":"b6f157ffebc7379fe53f91b2ef8808500c1761371e3ac1904346776699ac6b5d"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.2.elf.txt","role":"Mod v2.2 llvm-readelf Header Report","sizeLabel":"2.8 KiB","sha256":"c54a6b30d6cbba5bfebe809c22b3994751b5c3b60eb25fff59f1acdf6d885c6c"},{"filename":"RELEASE-v1.0.2-mod-v2.2.md","role":"Mod v2.2 Release Notes","sizeLabel":"3.0 KiB","sha256":"287bbadcd0b36d1696dcef891779974236f5e562a0a930e60fb8ca1e44fcf7da"},{"filename":"SHA256SUMS-v2.2.txt","role":"Dedicated SHA-256 Checksums for Mod v2.2 Only","sizeLabel":"0.4 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.2.txt"}]}];
       var mount = document.getElementById('release-mount');
       var buttons = document.querySelectorAll('.tab-btn');
 
@@ -447,7 +448,7 @@
         setTimeout(function () { copyBtn.textContent = 'Copy Command'; }, 1600);
       });
 
-      render('v2.4');
+      render('v2.5');
     })();
   </script>
 </body>
