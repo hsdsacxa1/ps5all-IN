@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TITAN-CORE Mod v2.4 – PS5 7.00–13.60 Unified Mounter &amp; ELF64</title>
+  <meta name="description" content="Download compiled TITAN-CORE Mod v2.4 PS5 ELF64 (16.66 MiB) for FW 7.00–13.60 with SaveData fix, ampr-emu-ng 238a72b, dlc_emu 0.3, safe USB unmount, and crash telemetry." />
+  <meta name="keywords" content="TITAN-CORE, PS5 13.60, PS5 ELF64, PS5 game mounter, ampr-emu-ng, dlc_emu, ShadowMountPlus, kstuff-lite, PS5 homebrew, elfldr 9021" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <link rel="canonical" href="https://hsdsacxa1.github.io/ps5all-IN/" />
+
+  <!-- OpenGraph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TITAN-CORE" />
+  <meta property="og:url" content="https://hsdsacxa1.github.io/ps5all-IN/" />
+  <meta property="og:title" content="TITAN-CORE Mod v2.4 – PS5 7.00–13.60 Unified Mounter &amp; ELF64" />
+  <meta property="og:description" content="Ready-to-deploy 16.66 MiB PS5 ELF64 with SaveData fix (#68), ampr-emu-ng 238a72b, drakmor dlc_emu 0.3, 7 dump formats, and safe USB unmount." />
+  <meta property="og:image" content="https://hsdsacxa1.github.io/ps5all-IN/assets/titan-core-og.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TITAN-CORE Mod v2.4 – PS5 7.00–13.60 Unified Mounter" />
+  <meta name="twitter:description" content="Compiled PS5 ELF64 (16.66 MiB) for FW 7.00–13.60 with SaveData fix, ampr-emu-ng 238a72b, dlc_emu 0.3 &amp; WebUI :8097." />
+  <meta name="twitter:image" content="https://hsdsacxa1.github.io/ps5all-IN/assets/titan-core-og.jpg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "TITAN-CORE Mod v2.4",
+      "alternateName": "TITAN-CORE PS5 Unified Mounter",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "PlayStation 5 Firmware 7.00-13.60 (FreeBSD / Orbis)",
+      "softwareVersion": "v1.0.4-mod-20261118",
+      "fileSize": "16.66MB",
+      "downloadUrl": "https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.4-mod-20261118/TITAN-CORE-v1.0-mod-20261118-v2.4.elf",
+      "url": "https://hsdsacxa1.github.io/ps5all-IN/",
+      "image": "https://hsdsacxa1.github.io/ps5all-IN/assets/titan-core-og.jpg",
+      "description": "Compiled PS5 ELF64 unified game mounter for FW 7.00–13.60 featuring SaveData protection (#68), ampr-emu-ng 238a72b, drakmor dlc_emu 0.3, PlayGo Stub 0.6, safe USB unmount, and crash telemetry.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "codeRepository": "https://github.com/hsdsacxa1/ps5all-IN"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I deploy TITAN-CORE Mod v2.4 ELF64 to PlayStation 5?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Start elfldr on PS5 port 9021 via Y2JB or WebKit, then run: nc -w 10 <PS5_IP> 9021 < TITAN-CORE-v1.0-mod-20261118-v2.4.elf and open http://<PS5_IP>:8097/ in your browser."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which PS5 firmware versions are supported by TITAN-CORE Mod v2.4?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "TITAN-CORE Mod v2.4 supports PlayStation 5 firmwares 7.00 through 13.60 with built-in OnionHEN / etaHEN guards and all 7 PS5 dump formats."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Mod v2.4 protect PS5 game saves?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "keep_fakelib() blocks libSceSaveData.native.sprx alongside libkernel.sprx and bumps STAMP_V to 3 so dump fakelibs never shadow the system save module."
+          }
+        }
+      ]
+    }
+  ]
+}
+  </script>
+
+  <style>
+    :root {
+      --bg: #070b14;
+      --surface: #0e1525;
+      --surface-alt: #121c30;
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+    /* Top Bar Contract: 3 zones */
+    header {
+      position: sticky; top: 0; z-index: 40;
+      background: rgba(7, 11, 20, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 32px;
+      height: 68px;
+    }
+    .brand { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    nav { display: flex; align-items: center; gap: 28px; font-size: 14px; font-weight: 500; color: var(--muted); }
+    nav a { white-space: nowrap; transition: color 150ms ease; }
+    nav a:hover { color: var(--text); }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px; border-radius: 10px;
+      background: var(--accent); color: #04130d;
+      font-size: 13px; font-weight: 700; white-space: nowrap;
+      transition: background 150ms ease, transform 150ms ease;
+    }
+    .btn-primary:hover { background: #34d399; transform: translateY(-1px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      font-size: 13px; font-weight: 600; white-space: nowrap;
+      transition: border-color 150ms ease, background 150ms ease;
+    }
+    .btn-secondary:hover { border-color: rgba(148,163,184,0.4); background: var(--surface-alt); }
+
+    /* Hero */
+    .hero { padding: 56px 0 48px; }
+    .hero-frame {
+      position: relative; border-radius: 20px; overflow: hidden;
+      border: 1px solid var(--border); background: var(--surface);
+      min-height: 460px; display: flex; align-items: center;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center;
+    }
+    .hero-scrim {
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(7,11,20,0.96) 0%, rgba(7,11,20,0.88) 46%, rgba(7,11,20,0.28) 100%);
+    }
+    .hero-content {
+      position: relative; z-index: 2; padding: 48px; max-width: 650px;
+    }
+    .meta-line {
+      font-size: 12px; color: var(--muted); letter-spacing: 0.04em;
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(2.25rem, 4.2vw, 3.5rem); font-weight: 800; line-height: 1.08;
+      letter-spacing: -0.03em; text-wrap: balance; margin-bottom: 18px;
+    }
+    .hero-desc { color: #cbd5e1; font-size: 16px; margin-bottom: 28px; max-width: 56ch; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+    /* KPI Strip below hero */
+    .metrics-strip {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px;
+    }
+    .metric {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;
+    }
+    .metric-val { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+    .metric-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    section { padding: 44px 0; border-top: 1px solid var(--border); }
+    h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .section-sub { color: var(--muted); font-size: 15px; margin-bottom: 28px; max-width: 68ch; }
+
+    /* Bento Grid */
+    .bento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .bento-wide { grid-column: span 2; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+    }
+    .card-kicker { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+    .card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .card p { font-size: 14px; color: var(--muted); }
+
+    /* Separated Releases */
+    .tabs {
+      display: inline-flex; gap: 6px; padding: 5px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      padding: 8px 16px; border: 0; border-radius: 8px; cursor: pointer;
+      background: transparent; color: var(--muted); font-size: 13px; font-weight: 600;
+      font-family: inherit; transition: background 150ms ease, color 150ms ease;
+    }
+    .tab-btn.active { background: var(--accent); color: #04130d; }
+    .release-panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+    }
+    .release-head {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
+    }
+    .asset-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .asset-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .asset-table td { padding: 12px; border-bottom: 1px solid rgba(148,163,184,0.08); vertical-align: middle; }
+    .asset-table tr:last-child td { border-bottom: 0; }
+    .dl-link { color: #34d399; font-weight: 600; }
+    .dl-link:hover { text-decoration: underline; }
+
+    /* Terminal Deploy Block */
+    .code-box {
+      background: #04070e; border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; overflow-x: auto;
+    }
+    .copy-btn {
+      padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); font-size: 12px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+    }
+    .copy-btn:hover { border-color: var(--accent); }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 28px 0 40px;
+      font-size: 13px; color: var(--muted);
+    }
+    .footer-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+
+    @media (max-width: 900px) {
+      nav { display: none; }
+      .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+      .bento { grid-template-columns: 1fr; }
+      .bento-wide { grid-column: span 1; }
+      .hero-content { padding: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container topbar">
+      <a class="brand" href="#top">TITAN-CORE</a>
+      <nav aria-label="Primary Navigation">
+        <a href="#capabilities">Capabilities</a>
+        <a href="#releases">Releases</a>
+        <a href="#formats">7 Formats</a>
+        <a href="#deploy">Deploy</a>
+      </nav>
+      <a class="btn-primary" href="https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.4-mod-20261118/TITAN-CORE-v1.0-mod-20261118-v2.4.elf">
+        Download ELF64 (16.66 MiB)
+      </a>
+    </div>
+  </header>
+
+  <main id="top" class="container">
+    <div class="hero">
+      <div class="hero-frame">
+        <img class="hero-bg" src="./assets/titan-core-hero.jpg" alt="TITAN-CORE PS5 precision hardware architecture" referrerpolicy="no-referrer" />
+        <div class="hero-scrim" aria-hidden="true"></div>
+        <div class="hero-content">
+          <div class="meta-line mono">
+            <span>PS5 FW 7.00–13.60</span>
+            <span>·</span>
+            <span>v1.0.4-mod-20261118</span>
+            <span>·</span>
+            <span>2-Stage LTO ELF64</span>
+          </div>
+          <h1>Unified PS5 Game Mounter, Emulators &amp; Crash Telemetry</h1>
+          <p class="hero-desc">
+            Pre-compiled 16.66 MiB ELF64 payload for PlayStation 5 with SaveData protection (#68),
+            bundled ampr-emu-ng 238a72b, drakmor dlc_emu 0.3, PlayGo Stub 0.6, and safe USB eject.
+          </p>
+          <div class="hero-actions">
+            <a class="btn-primary" href="https://github.com/hsdsacxa1/ps5all-IN/releases/download/v1.0.4-mod-20261118/TITAN-CORE-v1.0-mod-20261118-v2.4.elf">
+              Download Mod v2.4 (.elf)
+            </a>
+            <a class="btn-secondary" href="https://github.com/hsdsacxa1/ps5all-IN/releases" target="_blank" rel="noopener">
+              All Versioned Releases on GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics-strip">
+        <div class="metric">
+          <div class="metric-val mono">16.66 MiB</div>
+          <div class="metric-lbl">Compiled PS5 ELF64 (Entry 0x9E904)</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val mono">7.00–13.60</div>
+          <div class="metric-lbl">Verified PS5 Firmware Range</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val mono">7 Formats</div>
+          <div class="metric-lbl">Folder, LZ4, Zstd, PKG, FFPKG, IMG</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val mono">:9021 / :8097</div>
+          <div class="metric-lbl">elfldr Deploy · Built-in WebUI &amp; Debug</div>
+        </div>
+      </div>
+    </div>
+
+    <section id="capabilities">
+      <h2>01. Engineered for Stability on PS5 13.60</h2>
+      <p class="section-sub">Every Mod v2.4 subsystem is compiled into one self-contained binary with zero conflicting HEN launches.</p>
+      <div class="bento">
+        <article class="card bento-wide">
+          <div class="card-kicker mono">SaveData Protection · Kraken #68 / #64 / #76</div>
+          <h3>Zero Save Corruption with Automatic Cache Refresh</h3>
+          <p><code>keep_fakelib()</code> blocks <code>libSceSaveData.native.sprx</code> alongside <code>libkernel.sprx</code> so game dump fakelibs never shadow the system save module. <code>STAMP_V = 3</code> refreshes existing caches automatically on first launch.</p>
+        </article>
+        <article class="card">
+          <div class="card-kicker mono">ampr-emu-ng beta 238a72b</div>
+          <h3>256 MiB PRX Pool + Mandatory .pkg AMPR</h3>
+          <p>Includes the <code>ScratchBuffer::reset</code> Drop recursion fix and guarantees AMPR injection for every <code>.pkg</code> title (#73).</p>
+        </article>
+        <article class="card">
+          <div class="card-kicker mono">drakmor dlc_emu 0.3 + PlayGo 0.6</div>
+          <h3>Bundled Emulator SPRX Suite</h3>
+          <p>Embeds all 3 verified <code>dlc_emu</code> PRX modules with <code>dlc_emu_exclude</code> plus per-title <code>libScePlayGo.sprx</code> toggles.</p>
+        </article>
+        <article class="card bento-wide">
+          <div class="card-kicker mono">Safe Storage &amp; Forensics · Port 8097</div>
+          <h3>Safe USB Unmount, 3-Region Y2JB Guard &amp; Live Debug API</h3>
+          <p>Eject <code>/mnt/usb0..7</code> safely via <code>POST /api/usb/unmount</code> without deleting caches, protect Y2JB hosts (<code>PPSA01650/1/2</code>), skip active transfers (<code>stability_wait_seconds = 10</code>), and inspect memory/mounts via <code>/api/debug/*</code>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="releases">
+      <h2>02. Separated Releases by Version</h2>
+      <p class="section-sub">Switch versions below — each GitHub Release contains only its own verified artifacts and dedicated SHA-256 manifest.</p>
+
+      <div class="tabs" role="tablist" aria-label="TITAN-CORE Release Versions">
+        <button class="tab-btn active" type="button" data-ver="v2.4">Mod v2.4 (Latest · ELF64)</button>
+        <button class="tab-btn" type="button" data-ver="v2.3">Mod v2.3 (Archive)</button>
+        <button class="tab-btn" type="button" data-ver="v2.2">Mod v2.2 (Baseline)</button>
+      </div>
+
+      <div id="release-mount" class="release-panel"></div>
+    </section>
+
+    <section id="formats">
+      <h2>03. Supported Dump Formats &amp; Built-in HTTP API</h2>
+      <p class="section-sub">Native auto-classification across internal NVMe, M.2 SSD, and external USB drives.</p>
+      <div class="release-panel">
+        <table class="asset-table">
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>Markers / Extensions</th>
+              <th>Runtime Engine</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Plain Folder</td><td class="mono">&lt;TITLE_ID&gt;/eboot.bin</td><td>Native / ShadowMountPlus 1.7beta12</td></tr>
+            <tr><td>LZ4 / Zstd Folders</td><td class="mono">ampr_assets.index · ampr_zstd.index</td><td>ampr-emu-ng beta 238a72b (8-byte index #64)</td></tr>
+            <tr><td>Debug &amp; Sparse PKG</td><td class="mono">*.pkg (+ 16 CNT fallbacks)</td><td>titan-core-pkg + mandatory AMPR (#73)</td></tr>
+            <tr><td>PFS / Compressed / Images</td><td class="mono">*.ffpkg · *.ffpfsc · *.zst · *.lz4 · *.exfat · *.img</td><td>Unified ShadowMountPlus + AMPR</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="deploy">
+      <h2>04. One-Command Deploy to PS5</h2>
+      <p class="section-sub">Send the compiled ELF64 payload to <code>elfldr</code> on TCP port <code>9021</code>, then open <code>http://&lt;PS5_IP&gt;:8097/</code>.</p>
+      <div class="code-box">
+        <code id="deploy-cmd">nc -w 10 &lt;PS5_IP&gt; 9021 &lt; TITAN-CORE-v1.0-mod-20261118-v2.4.elf</code>
+        <button class="copy-btn" type="button" id="copy-deploy">Copy Command</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-row">
+      <span>TITAN-CORE Mod v2.4 · Fork of devchmod/TITAN-CORE · PS5 FW 7.00–13.60</span>
+      <div style="display:flex; gap:18px;">
+        <a href="https://github.com/hsdsacxa1/ps5all-IN" target="_blank" rel="noopener">GitHub Repository</a>
+        <a href="https://github.com/hsdsacxa1/ps5all-IN/releases" target="_blank" rel="noopener">Releases</a>
+        <a href="./sitemap.xml">Sitemap</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var repo = "hsdsacxa1/ps5all-IN";
+      var releases = [{"versionKey":"v2.4","tag":"v1.0.4-mod-20261118","shortName":"Mod v2.4","title":"TITAN-CORE v1.0.4 Mod v2.4 — Compiled PS5 ELF64 + SaveData Fix + AMPR 238a72b + dlc_emu 0.3","dateLabel":"18.11.2026 (Latest)","isLatest":true,"summary":"Готовый 2-stage LTO бинарник PS5 ELF64 (16.66 MiB) с критическим фиксом сохранений (#68), встроенным ampr-emu-ng beta 238a72b, drakmor dlc_emu 0.3, валидацией ampr_emu.index (#64) и безопасным извлечением USB.","checksumFilename":"SHA256SUMS-v2.4.txt","notesFilename":"RELEASE-v1.0.4-mod-v2.4.md","highlights":["Скомпилированный PS5 ELF64 (17,467,672 B / 16.66 MiB, clang-19.1.7 + Rust 1.99.0 + SDK v0.43)","Фикс сохранений (#68/#64/#76): блокировка libSceSaveData.native.sprx в keep_fakelib() + STAMP_V=3","Встроенный ampr-emu-ng beta 238a72b (фикс рекурсии Drop) + обязательный AMPR для .pkg (#73)","Встроенный drakmor dlc_emu 0.3 (3 SPRX + add_emulators + dlc_emu_exclude #71)","Безопасный USB unmount (POST /api/usb/unmount), stability_wait_seconds = 10 и auto_remove_missing (5 мин)"],"assets":[{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.elf","role":"Compiled PS5 ELF64 Payload (send to elfldr:9021)","sizeLabel":"16.66 MiB","sha256":"f7270b26ebfa10c36e37c2aa7910e549bb19d981c34d219ba00621a181c45db2","highlight":true},{"filename":"TITAN-CORE-v1.0.4-mod-20261118-src.tar.gz","role":"Complete Mod v2.4 Source Archive + Verified Vendor SPRX","sizeLabel":"1.49 MiB","sha256":"01943a0f06eedd2726bd5556c41afccea2eebcd77fb2cb27299b2cc0661326ba"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.patch","role":"Cumulative Unified Git Diff vs Upstream 2e1f186","sizeLabel":"109.8 KiB","sha256":"7874564cb8af54065600c67929412ab69023add05996c7c7f9b8c306c4823275"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.4.elf.txt","role":"Verified llvm-readelf -h -d Dynamic Imports Report","sizeLabel":"2.8 KiB","sha256":"8f82587758107f12103c1d95b08883b07d295887ea48b301e91e21f014a55f7e"},{"filename":"RELEASE-v1.0.4-mod-v2.4.md","role":"Release Notes & Technical Changelog","sizeLabel":"3.2 KiB","sha256":"83f88ec45396394163b600f1cba49881d55e7afe3699e243462455c7811ab9df"},{"filename":"SHA256SUMS-v2.4.txt","role":"Dedicated SHA-256 Checksums for Mod v2.4 Only","sizeLabel":"0.6 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.4.txt"}]},{"versionKey":"v2.3","tag":"v1.0.3-mod-20261118","shortName":"Mod v2.3","title":"TITAN-CORE v1.0.3 Mod v2.3 — Google Drive Telemetry + grimmtroll/TITAN FIX7 Port","dateLabel":"18.11.2026 (Archive)","isLatest":false,"summary":"Изолированный релиз Mod v2.3: облачная телеметрия крэшей в Google Drive (OAuth 2.0 + автономный Apps Script Webhook) и порт лучших решений grimmtroll2285-dot/TITAN FIX7.","checksumFilename":"SHA256SUMS-v2.3.txt","notesFilename":"RELEASE-v1.0.3-mod-v2.3.md","highlights":["Google Drive Crash Telemetry (OAuth 2.0 + автономный Webhook для оффлайн-консолей DNS 127.0.0.2)","Встроенный PlayGo Stub 0.6 (libScePlayGo.sprx) с выборочной инъекцией по Title ID","Защита всех 3 регионов Y2JB YouTube Host (PPSA01650 / PPSA01651 / PPSA01652)","Изоляция ShadowMountPlus 1.7beta12-isolated4 и мягкий unmount без MNT_FORCE","Менеджер бэкпортов Schema v1 с числовым сравнением 3-частных версий (01.008.000 == 1.8.0)"],"assets":[{"filename":"TITAN-CORE-v1.0.3-mod-20261118-src.tar.gz","role":"Mod v2.3 Complete Source Archive","sizeLabel":"1.12 MiB","sha256":"189183ee84d2d12f73c7c3d7e3999291eed7c7460a90389b8e67292dcc68f1de","highlight":true},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.3.patch","role":"Mod v2.3 Unified Git Diff","sizeLabel":"77.1 KiB","sha256":"119f42896fb676980e641e06e00117c9f61b05ce78aade03f831c71235e646fb"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.3.elf.txt","role":"Mod v2.3 llvm-readelf Header Report","sizeLabel":"2.8 KiB","sha256":"9aaf09aeba55ab87139ff60ac4c3ab59a4f1bcb0c1b8786bf5c710c1897073bd"},{"filename":"RELEASE-v1.0.3-mod-v2.3.md","role":"Mod v2.3 Release Notes","sizeLabel":"4.1 KiB","sha256":"509238c87784df109b617b81972a187c995128385737193afbe1df7f42ad2a2d"},{"filename":"SHA256SUMS-v2.3.txt","role":"Dedicated SHA-256 Checksums for Mod v2.3 Only","sizeLabel":"0.4 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.3.txt"}]},{"versionKey":"v2.2","tag":"v1.0.2-mod-20261118","shortName":"Mod v2.2","title":"TITAN-CORE v1.0.2 Mod v2.2 — Memory/Error Debug Forensics + All 7 PS5 Dump Formats","dateLabel":"18.11.2026 (Baseline)","isLatest":false,"summary":"Изолированный базовый релиз Mod v2.2: коллектор диагностики памяти/ошибок (/api/debug/*), 256-slot errno ring buffer, защита OnionHEN/etaHEN и классификатор всех 7 форматов дампов PS5.","checksumFilename":"SHA256SUMS-v2.2.txt","notesFilename":"RELEASE-v1.0.2-mod-v2.2.md","highlights":["Debug API (:8097): /api/debug/memory (KERN_PROC_VMMAP), /api/debug/mounts, /api/debug/error-dump, /api/debug/bundle","Авто-дамп крэша в /data/titan-core/debug/last-crash-bundle.json и 256-slot errno ring buffer","Поддержка всех 7 форматов дампов (plain, LZ4, Zstd, debug/sparse PKG, ffpkg/ffpfsc, .zst/.lz4, .exfat/.img)","16 CNT_FALLBACKS + protected.rs (SHA3-256 / AES-128-CBC) и OnionHEN/etaHEN Guard"],"assets":[{"filename":"TITAN-CORE-v1.0.2-mod-20261118-src.tar.gz","role":"Mod v2.2 Source Archive","sizeLabel":"1.12 MiB","sha256":"c2f19184bbadd54e5d1e9be0bcf32728ca8ae7ce61126a6438f8481a58469655","highlight":true},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.2.patch","role":"Mod v2.2 Unified Git Diff vs 2e1f186","sizeLabel":"73.0 KiB","sha256":"b6f157ffebc7379fe53f91b2ef8808500c1761371e3ac1904346776699ac6b5d"},{"filename":"TITAN-CORE-v1.0-mod-20261118-v2.2.elf.txt","role":"Mod v2.2 llvm-readelf Header Report","sizeLabel":"2.8 KiB","sha256":"c54a6b30d6cbba5bfebe809c22b3994751b5c3b60eb25fff59f1acdf6d885c6c"},{"filename":"RELEASE-v1.0.2-mod-v2.2.md","role":"Mod v2.2 Release Notes","sizeLabel":"3.0 KiB","sha256":"287bbadcd0b36d1696dcef891779974236f5e562a0a930e60fb8ca1e44fcf7da"},{"filename":"SHA256SUMS-v2.2.txt","role":"Dedicated SHA-256 Checksums for Mod v2.2 Only","sizeLabel":"0.4 KiB","sha256":"Verify via sha256sum -c SHA256SUMS-v2.2.txt"}]}];
+      var mount = document.getElementById('release-mount');
+      var buttons = document.querySelectorAll('.tab-btn');
+
+      function render(ver) {
+        var spec = releases.find(function (r) { return r.versionKey === ver; }) || releases[0];
+        var dlBase = 'https://github.com/' + repo + '/releases/download/' + spec.tag;
+        var relUrl = 'https://github.com/' + repo + '/releases/tag/' + spec.tag;
+        var rows = spec.assets.map(function (a) {
+          var hash = a.sha256.length > 24 ? a.sha256.slice(0, 16) + '…' : a.sha256;
+          return '<tr>' +
+            '<td class="mono"><a class="dl-link" href="' + dlBase + '/' + encodeURIComponent(a.filename) + '">' + a.filename + '</a></td>' +
+            '<td>' + a.role + '</td>' +
+            '<td class="mono">' + a.sizeLabel + '</td>' +
+            '<td class="mono" style="color:#94a3b8">' + hash + '</td>' +
+          '</tr>';
+        }).join('');
+
+        mount.innerHTML =
+          '<div class="release-head">' +
+            '<div>' +
+              '<div class="mono" style="font-size:12px;color:#10b981;margin-bottom:4px">' + spec.tag + ' · ' + spec.dateLabel + '</div>' +
+              '<h3 style="font-size:18px;margin-bottom:6px">' + spec.title + '</h3>' +
+              '<p style="font-size:13px;color:#94a3b8;max-width:72ch">' + spec.summary + '</p>' +
+            '</div>' +
+            '<a class="btn-secondary" href="' + relUrl + '" target="_blank" rel="noopener">Open ' + spec.shortName + ' Release</a>' +
+          '</div>' +
+          '<table class="asset-table">' +
+            '<thead><tr><th>Artifact</th><th>Description</th><th>Size</th><th>SHA-256</th></tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>';
+      }
+
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          buttons.forEach(function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          render(btn.getAttribute('data-ver'));
+        });
+      });
+
+      var copyBtn = document.getElementById('copy-deploy');
+      copyBtn.addEventListener('click', function () {
+        var cmd = document.getElementById('deploy-cmd').textContent;
+        if (navigator.clipboard) navigator.clipboard.writeText(cmd);
+        copyBtn.textContent = 'Copied';
+        setTimeout(function () { copyBtn.textContent = 'Copy Command'; }, 1600);
+      });
+
+      render('v2.4');
+    })();
+  </script>
+</body>
+</html>
